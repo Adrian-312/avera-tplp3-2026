@@ -15,6 +15,11 @@ public class PersonajeJugable extends EntidadViva {
         this.inventario = new ArrayList<>();
     }
 
+    @Override
+    public String realizarAccionEspecial() {
+        return getNombre() + " (Jugador) esta explorando la cueva, construyendo refugiose interactuando con el entorno.";
+    }
+
     public int getHambre() {
         return hambre;
     }

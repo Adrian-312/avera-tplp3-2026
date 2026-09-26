@@ -13,6 +13,11 @@ public class Planta extends PersonajeNoJugable {
     }
 
     @Override
+    public String realizarAccionEspecial() {
+        return getNombre() + " (Planta) fotosintetiza en su lugar.";
+    }
+
+    @Override
     public void deambular() {
         // Una planta es estática, por lo que no se desplaza
         System.out.println(getNombre() + " (Planta) es estática y no deambula.");

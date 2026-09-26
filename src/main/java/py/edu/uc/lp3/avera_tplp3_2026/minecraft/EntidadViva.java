@@ -11,6 +11,8 @@ public abstract class EntidadViva {
         this.altura = altura;
     }
 
+    public abstract String realizarAccionEspecial();
+
     public int getVida() {
         return vida;
     }

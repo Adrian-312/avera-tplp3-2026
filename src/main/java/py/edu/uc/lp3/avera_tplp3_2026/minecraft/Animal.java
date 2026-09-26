@@ -10,6 +10,11 @@ public class Animal extends PersonajeNoJugable {
         this.domable = domable;
         this.pacifico = pacifico;
     }
+    
+    @Override
+    public String realizarAccionEspecial() {
+        return getNombre() + " (Animal) busca alimento y pasta tranquilamente en el prado.";
+    }
 
     public boolean isDomable() {
         return domable;

@@ -11,6 +11,11 @@ public class Monstruo extends PersonajeNoJugable {
         this.puedeEstarArmado = puedeEstarArmado;
     }
 
+    @Override
+    public String realizarAccionEspecial() {
+        return getNombre() + " (Monstruo) ruge y ataca a los jugadores cercanos en la oscuridad!";
+    }
+
     public boolean isHostil() {
         return hostil;
     }
