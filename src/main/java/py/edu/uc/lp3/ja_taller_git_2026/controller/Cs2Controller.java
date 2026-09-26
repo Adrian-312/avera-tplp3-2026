@@ -4,8 +4,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.web.bind.annotation.*;
 import py.edu.uc.lp3.ja_taller_git_2026.domain.Arma;
 import py.edu.uc.lp3.ja_taller_git_2026.domain.Jugador;
+import py.edu.uc.lp3.ja_taller_git_2026.domain.Mapa;
 import py.edu.uc.lp3.ja_taller_git_2026.repository.ArmaRepository;
 import py.edu.uc.lp3.ja_taller_git_2026.repository.JugadorRepository;
+import py.edu.uc.lp3.ja_taller_git_2026.repository.MapaRepository;
 
 import java.util.List;
 
@@ -15,10 +17,14 @@ public class Cs2Controller implements CommandLineRunner {
 
     private final ArmaRepository armaRepository;
     private final JugadorRepository jugadorRepository;
+    private final MapaRepository mapaRepository;
 
-    public Cs2Controller(ArmaRepository armaRepository, JugadorRepository jugadorRepository) {
+    public Cs2Controller(ArmaRepository armaRepository, 
+                         JugadorRepository jugadorRepository, 
+                         MapaRepository mapaRepository) {
         this.armaRepository = armaRepository;
         this.jugadorRepository = jugadorRepository;
+        this.mapaRepository = mapaRepository;
     }
 
     @Override
@@ -35,6 +41,13 @@ public class Cs2Controller implements CommandLineRunner {
             jugadorRepository.save(new Jugador("ZywOo", "CT", 12500, 100));
             jugadorRepository.save(new Jugador("niko", "TR", 4200, 85));
         }
+
+        if (mapaRepository.count() == 0) {
+            mapaRepository.save(new Mapa("Mirage", "Oriente Medio", true));
+            mapaRepository.save(new Mapa("Inferno", "Italia", true));
+            mapaRepository.save(new Mapa("Nuke", "EE.UU.", true));
+            mapaRepository.save(new Mapa("Dust II", "Marruecos", false));
+        }
     }
 
     @GetMapping("/armas")
@@ -45,5 +58,10 @@ public class Cs2Controller implements CommandLineRunner {
     @GetMapping("/jugadores")
     public List<Jugador> getJugadores() {
         return jugadorRepository.findAll();
+    }
+
+    @GetMapping("/mapas")
+    public List<Mapa> getMapas() {
+        return mapaRepository.findAll();
     }
 }
