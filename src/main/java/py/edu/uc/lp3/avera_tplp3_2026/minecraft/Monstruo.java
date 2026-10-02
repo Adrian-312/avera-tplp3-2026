@@ -1,11 +1,12 @@
 package py.edu.uc.lp3.avera_tplp3_2026.minecraft;
+
 public class Monstruo extends PersonajeNoJugable {
 
     private boolean hostil;
     private boolean puedeEstarArmado;
 
     public Monstruo(int vida, String nombre, double altura, boolean crecen,
-                     boolean hostil, boolean puedeEstarArmado) {
+                    boolean hostil, boolean puedeEstarArmado) {
         super(vida, nombre, altura, crecen);
         this.hostil = hostil;
         this.puedeEstarArmado = puedeEstarArmado;
@@ -35,5 +36,9 @@ public class Monstruo extends PersonajeNoJugable {
     @Override
     public void deambular() {
         System.out.println(getNombre() + " (Monstruo) está deambulando de forma hostil.");
+    }
+
+    public void cambiarHostilidad() {
+        this.hostil = !this.hostil;
     }
 }
