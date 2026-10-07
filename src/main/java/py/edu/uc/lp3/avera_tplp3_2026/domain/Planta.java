@@ -1,15 +1,17 @@
-package py.edu.uc.lp3.avera_tplp3_2026.minecraft;
+package py.edu.uc.lp3.avera_tplp3_2026.domain;
+
 public class Planta extends PersonajeNoJugable {
 
-    private boolean estatico;
+    private final boolean estatico = true; // las plantas no se mueven
 
-    public Planta(int vida, String nombre, double altura, boolean crecen) {
-        super(vida, nombre, altura, crecen);
-        this.estatico = true; // las plantas no se mueven
+    // Constructor simple
+    public Planta(String nombre) {
+        super(nombre);
     }
 
-    public boolean isEstatico() {
-        return estatico;
+    // Constructor completo
+    public Planta(int vida, String nombre, double altura, boolean crecen) {
+        super(vida, nombre, altura, crecen);
     }
 
     @Override
@@ -19,7 +21,10 @@ public class Planta extends PersonajeNoJugable {
 
     @Override
     public void deambular() {
-        // Una planta es estática, por lo que no se desplaza
         System.out.println(getNombre() + " (Planta) es estática y no deambula.");
+    }
+
+    public boolean isEstatico() {
+        return estatico;
     }
 }
