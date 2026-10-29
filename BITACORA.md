@@ -25,3 +25,13 @@
 - La IA propuso el código de las clases de `domain` y de los controllers, y explicó los conceptos de sobrecarga y sobreescritura.
 - Yo copié los archivos al proyecto, los compilé y los probé con `./mvnw spring-boot:run`, y organicé los commits en Git.
 - Yo mantuve el diagrama Mermaid y el README alineados con lo que hay en `src/`.
+
+## Ejercicio de interfaces (29/10/2026)
+
+**Ejercicio:** elegir una capacidad compartida por dos clases de familias distintas y declararla como interface en `domain`.
+
+- Asistente: opencode (modelo `big-pickle`).
+- Se agregó la interface `Atacante` con `atacar()` abstracto y `sonidoDeAtaque()` con implementación por defecto.
+- `PersonajeJugable` y `Monstruo` la implementan; `Monstruo` reemplaza el default.
+- Se agregó `GET /minecraft/ataques`, que pide el mensaje a través de `List<Atacante>` y responde JSON.
+- Verificación: `./mvnw test` y prueba del endpoint con `curl`.

@@ -1,6 +1,6 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
-public class Monstruo extends PersonajeNoJugable {
+public class Monstruo extends PersonajeNoJugable implements Atacante {
 
     private boolean hostil;
     private final boolean puedeEstarArmado;
@@ -23,6 +23,16 @@ public class Monstruo extends PersonajeNoJugable {
     @Override
     public String realizarAccionEspecial() {
         return getNombre() + " (Monstruo) ruge y ataca a los jugadores cercanos en la oscuridad!";
+    }
+
+    @Override
+    public String atacar() {
+        return getNombre() + " (Monstruo) muerde y persigue al jugador entre las sombras.";
+    }
+
+    @Override
+    public String sonidoDeAtaque() {
+        return getNombre() + " (Monstruo) gruñe y hace temblar el ambiente.";
     }
 
     @Override

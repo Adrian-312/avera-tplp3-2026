@@ -6,8 +6,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Animal;
+import py.edu.uc.lp3.avera_tplp3_2026.domain.Atacante;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.EntidadViva;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Monstruo;
+import py.edu.uc.lp3.avera_tplp3_2026.domain.PersonajeJugable;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,21 @@ public class ComportamientoController {
                 .map(e -> Map.of(
                         "nombre", e.getNombre(),
                         "accion", e.realizarAccionEspecial()))
+                .toList();
+    }
+
+    // Polimorfismo por interfaz: dos familias distintas hablan por el tipo Atacante
+    @GetMapping("/ataques")
+    public List<Map<String, String>> obtenerAtaques() {
+        List<Atacante> atacantes = List.of(
+                new PersonajeJugable("Steve"),
+                new Monstruo("Zombie"));
+
+        return atacantes.stream()
+                .map(a -> Map.of(
+                        "clase", a.getClass().getSimpleName(),
+                        "mensaje", a.atacar(),
+                        "sonido", a.sonidoDeAtaque()))
                 .toList();
     }
 

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class PersonajeJugable extends EntidadViva {
+public class PersonajeJugable extends EntidadViva implements Atacante {
 
     public static final int HAMBRE_MAXIMA = 20;
 
@@ -30,6 +30,11 @@ public class PersonajeJugable extends EntidadViva {
     @Override
     public String realizarAccionEspecial() {
         return getNombre() + " (Jugador) explora la cueva, construye refugios e interactúa con el entorno.";
+    }
+
+    @Override
+    public String atacar() {
+        return getNombre() + " (Jugador) golpea con su espada de hierro.";
     }
 
     public void comer(int puntos) {

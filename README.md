@@ -18,6 +18,11 @@ classDiagram
         +getNombre() String
         +getAltura() double
     }
+    class Atacante {
+        <<interface>>
+        +atacar()* String
+        +sonidoDeAtaque() String
+    }
     class PersonajeJugable {
         -int hambre
         -boolean controlable
@@ -25,6 +30,7 @@ classDiagram
         +PersonajeJugable(String nombre)
         +PersonajeJugable(int, String, double, int, boolean)
         +realizarAccionEspecial() String
+        +atacar() String
         +comer(int puntos) void
         +agregarAlInventario(String item) void
         +quitarDelInventario(String item) void
@@ -49,6 +55,8 @@ classDiagram
         +Monstruo(String nombre)
         +Monstruo(int, String, double, boolean, boolean, boolean)
         +realizarAccionEspecial() String
+        +atacar() String
+        +sonidoDeAtaque() String
         +deambular() void
         +cambiarHostilidad() void
     }
@@ -64,7 +72,18 @@ classDiagram
     PersonajeNoJugable <|-- Animal
     PersonajeNoJugable <|-- Monstruo
     PersonajeNoJugable <|-- Planta
+    Atacante <|.. PersonajeJugable
+    Atacante <|.. Monstruo
 ```
+
+## Interfaz `Atacante`
+
+`PersonajeJugable` y `Monstruo` pertenecen a familias distintas (`EntidadViva` directa y `PersonajeNoJugable`), pero comparten la capacidad de atacar:
+
+- `Atacante.atacar()` es abstracto: cada clase lo implementa a su modo.
+- `Atacante.sonidoDeAtaque()` tiene una implementación por defecto. `PersonajeJugable` la hereda y `Monstruo` la reemplaza con su propio texto.
+
+El endpoint `GET /minecraft/ataques` guarda a ambos en una `List<Atacante>` y pide el mensaje a través del tipo de la interfaz.
 
 ## Sobrecarga y sobreescritura
 
@@ -88,6 +107,7 @@ classDiagram
 |---|---|
 | `GET /` | El servicio está vivo |
 | `GET /minecraft/acciones` | Sobreescritura: JSON de `Animal` y `Monstruo` vía tipo padre |
+| `GET /minecraft/ataques` | Interfaz `Atacante`: `PersonajeJugable` y `Monstruo` responden vía el tipo de la interfaz |
 | `GET /minecraft/crear-jugador?nombre=Alex&vida=15` | Constructor completo desde la URL |
 | `GET /minecraft/crear-jugador?vida=-5` | La clase rechaza el valor (HTTP 400) |
 | `GET /minecraft/crear-monstruo?nombre=Zombie` | Constructor simple |
