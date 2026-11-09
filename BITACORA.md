@@ -1,37 +1,27 @@
-# Bitácora de asistencia de inteligencia artificial
+# Bitácora de uso de IA
 
-**Ejercicio:** POO-06 — Revisión, paquetes, constructores y sobrecarga
-**Asignatura:** Lenguaje de Programación 3 (CYT646)
-**Alumno:** Adrian (GitHub: Adrian-312)
-**Dominio:** Minecraft
-
-## Asistente y modelo
-
-- **Marca del asistente:** Claude (Anthropic), usado desde la interfaz web/app de chat.
-- **Modelo exacto de LLM:** Claude Sonnet 5.5 (`claude-sonnet-5-5`).
+- **Asistente:** Claude (Anthropic), usado desde la interfaz web claude.ai.
+- **Modelo de LLM:** Claude Sonnet 5.5
+- **Fecha:** 9 de noviembre de 2026
 
 ## Resumen de prompts
 
-1. Subí el enunciado y la rúbrica y pedí una guía paso a paso de lo que me faltaba en mi repositorio.
-2. Pedí que revisara el nombre de los paquetes de mis controllers tras mover las clases a `domain` y `rest/controller`. Se detectó un error de sintaxis en la línea `package` y la falta de imports en `ConstruccionController`.
-3. Subí todas mis clases y controllers y pedí que agregara constructores simples y sobrecargados, y que me explicara qué son la sobrecarga y la sobreescritura.
-4. Pedí que adaptara los controllers a los nuevos constructores y que quitara los setters públicos para proteger vida, nombre y altura.
-5. Pedí los comandos de Git para armar commits separados y hacer el push.
-6. Consulté cómo solucionar el error de permiso denegado al ejecutar `mvnw`.
-7. Pedí generar esta bitácora y cómo evitar que Git me pida usuario y contraseña en cada push.
+1. Pasé el enunciado de POO-08, los 17 archivos Java del proyecto (dominio, excepciones y controllers) y pedí los pasos para completar la tarea y la corrección de lo que estuviera mal.
+2. Subí `pom.xml`, `application.properties` y los DTO compilados, y pedí que me explicara cómo hacer cada pieza que faltaba (porque no sabía hacerlas) y si estaban bien las clases `Explosivo` y `Explosion`.
+3. Pegué el error de compilación de Maven y el código de mi `GlobalExceptionHandler`; pedí corregir el conflicto.
+4. Pedí ayuda con el `.gitignore`, con las URL para probar, con la consola H2 y con importar la colección en Insomnia (capturas de pantalla de los errores que me salían).
+5. Pregunté si era correcto que el Creeper siga apareciendo en el listado después de explotar, pedí completar el README con lo que pedía la tarea y actualizar el diagrama de clases, cómo hacer el merge de mi rama `desarrollo` a `main` y si la tarea pedía un `RUN.md`.
+6. Pedí separar la documentación: un `RUN.md` con las instrucciones de ejecución y un `README.md` sin la parte de entregas, y que corrigiera ambos.
 
-## Qué hice yo y qué aportó la IA
+## Qué aportó la IA
 
-- La IA propuso el código de las clases de `domain` y de los controllers, y explicó los conceptos de sobrecarga y sobreescritura.
-- Yo copié los archivos al proyecto, los compilé y los probé con `./mvnw spring-boot:run`, y organicé los commits en Git.
-- Yo mantuve el diagrama Mermaid y el README alineados con lo que hay en `src/`.
+- Revisión del código existente contra las consignas del enunciado y lista de correcciones:
+  - `listar` usaba una consulta "mayor que" para un parámetro llamado `vidaMinima`, y ignoraba `vidaMinima` si también venía `nombre`.
+  - `quitarDelInventario` distinguía mayúsculas y `consumirItem` no.
+  - Se quitaron los endpoints con verbo en la URL (`/crear-jugador`, `/crear-monstruo`, `/danio`), que no seguían la convención REST.
+- Código nuevo: `EntidadVivaRepository`. El `GlobalExceptionHandler` y el `ErrorResponse` ya existían en mi proyecto; la IA asumió que faltaban y los pisó, lo que causó un error de compilación. Se corrigió dejando un `ErrorResponse` (con `timestamp`, `status`, `codigo`, `mensaje` y `path`) y agregando a mi handler el manejo del JSON ilegible.
+- Documentación y pruebas: la colección de Insomnia, el README (con diagrama Mermaid, invariantes y recorrido de prueba), esta bitácora y el documento de especificaciones.
 
-## Ejercicio de interfaces (29/10/2026)
+## Qué hice yo
 
-**Ejercicio:** elegir una capacidad compartida por dos clases de familias distintas y declararla como interface en `domain`.
-
-- Asistente: opencode (modelo `big-pickle`).
-- Se agregó la interface `Atacante` con `atacar()` abstracto y `sonidoDeAtaque()` con implementación por defecto.
-- `PersonajeJugable` y `Monstruo` la implementan; `Monstruo` reemplaza el default.
-- Se agregó `GET /minecraft/ataques`, que pide el mensaje a través de `List<Atacante>` y responde JSON.
-- Verificación: `./mvnw test` y prueba del endpoint con `curl`.
+Revisé y probé lo generado: arranqué el servicio, recorrí la colección de Insomnia y comprobé en el listado que el estado se persiste después de la simulación. Resolví el conflicto del handler y subí los cambios al repositorio.

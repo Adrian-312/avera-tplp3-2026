@@ -1,15 +1,24 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("planta")
 public class Planta extends PersonajeNoJugable {
 
-    private final boolean estatico = true; // las plantas no se mueven
+    private boolean estatico = true;
 
-    // Constructor simple
+    protected Planta() {
+        super();
+    }
+
+    // Constructor simple.
     public Planta(String nombre) {
         super(nombre);
     }
 
-    // Constructor completo
+    // Constructor completo.
     public Planta(int vida, String nombre, double altura, boolean crecen) {
         super(vida, nombre, altura, crecen);
     }

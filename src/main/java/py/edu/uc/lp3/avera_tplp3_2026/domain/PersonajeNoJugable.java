@@ -1,21 +1,34 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("no_jugable")
 public abstract class PersonajeNoJugable extends EntidadViva {
 
-    private final boolean noControlable;
-    private final boolean crecen;
+    private boolean noControlable;
+    private boolean crecen;
 
-    // Constructor simple
+    protected PersonajeNoJugable() {
+        super();
+    }
+
+    // Constructor simple.
     protected PersonajeNoJugable(String nombre) {
         super(nombre);
         this.noControlable = true;
         this.crecen = false;
     }
 
-    // Constructor completo
+    // Constructor completo.
     protected PersonajeNoJugable(int vida, String nombre, double altura, boolean crecen) {
         super(vida, nombre, altura);
         this.noControlable = true;
+        this.crecen = crecen;
+    }
+
+    public void actualizarCrecimiento(boolean crecen) {
         this.crecen = crecen;
     }
 
@@ -27,6 +40,5 @@ public abstract class PersonajeNoJugable extends EntidadViva {
         return crecen;
     }
 
-    // Cada subclase (Monstruo, Animal, Planta) debe definirlo
     public abstract void deambular();
 }

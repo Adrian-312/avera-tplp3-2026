@@ -1,18 +1,27 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("animal")
 public class Animal extends PersonajeNoJugable {
 
-    private final boolean domable;
-    private final boolean pacifico;
+    private boolean domable;
+    private boolean pacifico;
 
-    // Constructor simple
+    protected Animal() {
+        super();
+    }
+
+    // Constructor simple.
     public Animal(String nombre) {
         super(nombre);
         this.domable = false;
         this.pacifico = true;
     }
 
-    // Constructor completo
+    // Constructor completo.
     public Animal(int vida, String nombre, double altura, boolean crecen,
                   boolean domable, boolean pacifico) {
         super(vida, nombre, altura, crecen);
@@ -28,6 +37,11 @@ public class Animal extends PersonajeNoJugable {
     @Override
     public void deambular() {
         System.out.println(getNombre() + " (Animal) está deambulando tranquilamente.");
+    }
+
+    public void actualizarRasgos(boolean domable, boolean pacifico) {
+        this.domable = domable;
+        this.pacifico = pacifico;
     }
 
     public boolean isDomable() {
