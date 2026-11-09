@@ -46,11 +46,15 @@ public class EntidadController {
     @GetMapping
     public List<EntidadViva> listar(@RequestParam(required = false) String nombre,
                                     @RequestParam(required = false, name = "vidaMinima") Integer vidaMinima) {
-        if (nombre != null && !nombre.isBlank()) {
+        boolean hayNombre = nombre != null && !nombre.isBlank();
+        if (hayNombre && vidaMinima != null) {
+            return repository.findByNombreContainingIgnoreCaseAndVidaGreaterThanEqual(nombre, vidaMinima);
+        }
+        if (hayNombre) {
             return repository.findByNombreContainingIgnoreCase(nombre);
         }
         if (vidaMinima != null) {
-            return repository.findByVidaGreaterThan(vidaMinima);
+            return repository.findByVidaGreaterThanEqual(vidaMinima);
         }
         return repository.findAll();
     }

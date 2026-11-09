@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -55,6 +56,19 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "PARAMETRO_INVALIDO",
                 "El parámetro '" + ex.getName() + "' tiene un valor inválido: " + ex.getValue(),
+                request.getRequestURI());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    // JSON roto o ilegible en el cuerpo de la petición.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleJsonIlegible(HttpMessageNotReadableException ex,
+                                                            HttpServletRequest request) {
+        ErrorResponse body = new ErrorResponse(
+                Instant.now().toString(),
+                HttpStatus.BAD_REQUEST.value(),
+                "CUERPO_ILEGIBLE",
+                "El cuerpo de la petición no es un JSON válido",
                 request.getRequestURI());
         return ResponseEntity.badRequest().body(body);
     }

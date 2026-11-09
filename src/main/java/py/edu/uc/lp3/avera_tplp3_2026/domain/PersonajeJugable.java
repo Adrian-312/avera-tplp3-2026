@@ -118,7 +118,7 @@ public class PersonajeJugable extends EntidadViva implements Explosivo {
     }
 
     public void quitarDelInventario(String item) {
-        inventario.remove(item);
+        inventario.removeIf(i -> i.equalsIgnoreCase(item));
     }
 
     public void reemplazarInventario(List<String> items) {
