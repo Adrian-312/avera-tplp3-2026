@@ -5,7 +5,7 @@ Servicio HTTP con Spring Boot sobre el dominio **Minecraft**. Persiste una famil
 - **Alumno:** Adrian (GitHub: `Adrian-312`)
 - **Asignatura:** Lenguaje de Programación 3 (CYT646)
 - **Ejercicio:** POO-08 — CRUD REST, H2, reglas de juego y excepciones
-- **Commit de la solución:** pendiente de registrar después del commit final (ver la entrega en Classroom).
+- **Commit de la solución:** [`203181e679a6d359c3007c6a46ce549397c2c204`](https://github.com/Adrian-312/avera-tplp3-2026/commit/203181e679a6d359c3007c6a46ce549397c2c204). El commit inmediatamente posterior solo agrega este enlace.
 - **Colección Insomnia:** [`insomnia/poo08-minecraft.json`](insomnia/poo08-minecraft.json)
 - **Especificaciones aplicadas al dominio:** [`docs/ESPECIFICACIONES-POO08.md`](docs/ESPECIFICACIONES-POO08.md)
 - **Bitácora de IA:** [`BITACORA.md`](BITACORA.md)

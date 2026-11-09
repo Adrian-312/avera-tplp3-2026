@@ -5,7 +5,7 @@
 **Ejercicio:** POO-08 — CRUD REST, H2, reglas de juego y excepciones  
 **Dominio:** Minecraft  
 **Repositorio:** `https://github.com/Adrian-312/avera-tplp3-2026`  
-**Commit de la solución:** pendiente de registrar después del commit final (se pega también en Classroom).  
+**Commit de la solución:** [`203181e679a6d359c3007c6a46ce549397c2c204`](https://github.com/Adrian-312/avera-tplp3-2026/commit/203181e679a6d359c3007c6a46ce549397c2c204). El commit posterior solo agrega este enlace.  
 **Colección Insomnia:** `insomnia/poo08-minecraft.json`
 
 ---
@@ -417,10 +417,10 @@ Consultar `SELECT * FROM entidad_viva;` y `SELECT * FROM jugador_inventario;` pa
 
 ## 7. Enlace al commit
 
-El enlace exacto se registra al finalizar la entrega:
+El enlace exacto de la solución es:
 
 ```text
-https://github.com/Adrian-312/avera-tplp3-2026/commit/{HASH}
+https://github.com/Adrian-312/avera-tplp3-2026/commit/203181e679a6d359c3007c6a46ce549397c2c204
 ```
 
-También se pega en la tarea de Classroom y en el README del repositorio.
+Ese commit contiene el código, la colección Insomnia, el README, la bitácora y este documento. El commit inmediatamente posterior solo agrega el enlace en los documentos. También se pega en la tarea de Classroom.
