@@ -55,94 +55,147 @@ Errores (JSON con `timestamp`, `status`, `codigo`, `mensaje` y `path`):
 
 ## Diagrama
 
+El diagrama se divide en tres capas para que sea legible: dominio, excepciones y capa REST con persistencia. Las clases marcadas como `externa` solo anclan las relaciones con otra capa.
+
+### 1. Dominio (`domain`)
+
 ```mermaid
 classDiagram
     direction TB
 
-    class EntidadViva {
-        <<abstract>>
-        -Long id
-        -int vida
-        -String nombre
-        -double altura
-        +realizarAccionEspecial() String
-        +recibirDanio(int)
-        +recibirExplosion(int, String) int
-        +curar(int)
-    }
-    class PersonajeJugable {
-        -int hambre
-        -boolean controlable
-        -List inventario
-        +poderExplosivo() int
-        +recibirExplosion(int, String) int
-    }
-    class PersonajeNoJugable {
-        <<abstract>>
-        +deambular()
-    }
-    class Monstruo {
-        -boolean hostil
-        -int potenciaExplosiva
-        +explotar(int) Explosion
-        +poderExplosivo() int
-    }
-    class Animal {
-        -boolean domable
-        -boolean pacifico
-    }
-    class Planta {
-        -boolean estatico
-    }
     class Explosivo {
         <<interface>>
         +poderExplosivo() int
         +sonidoDeExplosion() String
     }
+
+    class EntidadViva {
+        <<abstract>>
+        +int VIDA_MAXIMA$
+        -Long id
+        -int vida
+        -String nombre
+        -double altura
+        -String ultimoOrigenDanio
+        #EntidadViva()
+        #EntidadViva(String nombre)
+        #EntidadViva(int vida, String nombre, double altura)
+        #validarNombre(String)$
+        #validarVida(int)$
+        #validarAltura(double)$
+        +realizarAccionEspecial() String*
+        +actualizarPerfil(String, double)
+        +actualizarVida(int)
+        +recibirDanio(int)
+        +recibirDanio(int, String)
+        +curar(int)
+        +recibirExplosion(int, String) int
+        +isVivo() boolean
+        +getId() Long
+        +getVida() int
+        +getNombre() String
+        +getAltura() double
+        +getUltimoOrigenDanio() String
+        +toString() String
+    }
+
+    class PersonajeJugable {
+        +int HAMBRE_MAXIMA$
+        +int ESCUDO_ABSORCION$
+        -int hambre
+        -boolean controlable
+        -List~String~ inventario
+        #PersonajeJugable()
+        +PersonajeJugable(String nombre)
+        +PersonajeJugable(int vida, String nombre, double altura, int hambre, boolean controlable)
+        -validarHambre(int)$
+        +realizarAccionEspecial() String
+        +poderExplosivo() int
+        +sonidoDeExplosion() String
+        +recibirExplosion(int, String) int
+        +comer(int)
+        +actualizarHambre(int)
+        +actualizarControl(boolean)
+        +getHambre() int
+        +isControlable() boolean
+        +getInventario() List~String~
+        +agregarAlInventario(String)
+        +quitarDelInventario(String)
+        +reemplazarInventario(List~String~)
+        -consumirItem(String) boolean
+        +toString() String
+    }
+
+    class PersonajeNoJugable {
+        <<abstract>>
+        -boolean noControlable
+        -boolean crecen
+        #PersonajeNoJugable()
+        #PersonajeNoJugable(String nombre)
+        #PersonajeNoJugable(int vida, String nombre, double altura, boolean crecen)
+        +actualizarCrecimiento(boolean)
+        +isNoControlable() boolean
+        +isCrecen() boolean
+        +deambular()*
+    }
+
+    class Monstruo {
+        +int POTENCIA_EXPLOSIVA_CREEPER$
+        -boolean hostil
+        -boolean puedeEstarArmado
+        -int potenciaExplosiva
+        #Monstruo()
+        +Monstruo(String nombre)
+        +Monstruo(int vida, String nombre, double altura, boolean crecen, boolean hostil, boolean puedeEstarArmado)
+        +Monstruo(int vida, String nombre, double altura, boolean crecen, boolean hostil, boolean puedeEstarArmado, int potenciaExplosiva)
+        -validarPotencia(int)$
+        +realizarAccionEspecial() String
+        +poderExplosivo() int
+        +sonidoDeExplosion() String
+        +explotar(int) Explosion
+        +deambular()
+        +cambiarHostilidad()
+        +actualizarHostilidad(boolean)
+        +actualizarArmamento(boolean)
+        +actualizarPotenciaExplosiva(int)
+        +isHostil() boolean
+        +isPuedeEstarArmado() boolean
+        +getPotenciaExplosiva() int
+    }
+
+    class Animal {
+        -boolean domable
+        -boolean pacifico
+        #Animal()
+        +Animal(String nombre)
+        +Animal(int vida, String nombre, double altura, boolean crecen, boolean domable, boolean pacifico)
+        +realizarAccionEspecial() String
+        +deambular()
+        +actualizarRasgos(boolean, boolean)
+        +isDomable() boolean
+        +isPacifico() boolean
+    }
+
+    class Planta {
+        -boolean estatico
+        #Planta()
+        +Planta(String nombre)
+        +Planta(int vida, String nombre, double altura, boolean crecen)
+        +realizarAccionEspecial() String
+        +deambular()
+        +isEstatico() boolean
+    }
+
     class Explosion {
         <<record>>
         Long origenId
         String origen
         int potencia
+        +Explosion(Long, String, int)
     }
 
-    class JpaRepository {
-        <<interface>>
-    }
-    class EntidadVivaRepository {
-        <<interface>>
-        +findByNombreContainingIgnoreCase(String)
-        +findByVidaGreaterThanEqual(int)
-        +findByNombreContainingIgnoreCaseAndVidaGreaterThanEqual(String, int)
-    }
-
-    class EntidadController {
-        +crear() +listar() +buscar()
-        +reemplazar() +actualizar() +eliminar()
-    }
-    class SimulacionController {
-        +explosion()
-    }
-    class ComportamientoController {
-        +obtenerAcciones()
-        +obtenerExplosivos()
-    }
-
-    class RuntimeException
-    class MinecraftException {
-        -String codigo
-        +getCodigo() String
-    }
-    class EntidadNoEncontradaException
-    class EntidadInvalidaException
-    class GlobalExceptionHandler
-    class ErrorResponse {
-        <<record>>
-        String timestamp
-        int status
-        String codigo
-        String mensaje
-        String path
+    class EntidadInvalidaException {
+        <<externa: domain.exception>>
     }
 
     EntidadViva <|-- PersonajeJugable
@@ -153,26 +206,237 @@ classDiagram
 
     Explosivo <|.. PersonajeJugable
     Explosivo <|.. Monstruo
+
     Monstruo ..> Explosion : crea
 
-    JpaRepository <|-- EntidadVivaRepository
-    EntidadVivaRepository ..> EntidadViva : persiste
-    EntidadController ..> EntidadVivaRepository : usa
-    SimulacionController ..> EntidadVivaRepository : usa
-    SimulacionController ..> Monstruo : dispara explotar
-    SimulacionController ..> Explosion : lee la potencia
-    ComportamientoController ..> EntidadVivaRepository : usa
-    ComportamientoController ..> Explosivo : lee
+    EntidadViva ..> EntidadInvalidaException : lanza
+    PersonajeJugable ..> EntidadInvalidaException : lanza
+    Monstruo ..> EntidadInvalidaException : lanza
+    Explosion ..> EntidadInvalidaException : lanza
+```
+
+### 2. Excepciones y manejo de errores (`domain.exception` y `rest.exception`)
+
+```mermaid
+classDiagram
+    direction TB
+
+    class RuntimeException {
+        <<java.lang>>
+    }
+
+    class MinecraftException {
+        -String codigo
+        #MinecraftException(String codigo, String mensaje)
+        #MinecraftException(String codigo, String mensaje, Throwable causa)
+        +getCodigo() String
+    }
+
+    class EntidadNoEncontradaException {
+        +EntidadNoEncontradaException(String mensaje)
+    }
+
+    class EntidadInvalidaException {
+        +EntidadInvalidaException(String mensaje)
+    }
+
+    class GlobalExceptionHandler {
+        <<RestControllerAdvice>>
+        +handleNoEncontrada(EntidadNoEncontradaException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleInvalida(EntidadInvalidaException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleBase(MinecraftException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleIllegalArgument(IllegalArgumentException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleTipoInvalido(MethodArgumentTypeMismatchException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleJsonIlegible(HttpMessageNotReadableException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        -respuesta(HttpStatus, MinecraftException, HttpServletRequest) ResponseEntity~ErrorResponse~
+    }
+
+    class ErrorResponse {
+        <<record>>
+        String timestamp
+        int status
+        String codigo
+        String mensaje
+        String path
+    }
 
     RuntimeException <|-- MinecraftException
     MinecraftException <|-- EntidadNoEncontradaException
     MinecraftException <|-- EntidadInvalidaException
-    EntidadViva ..> EntidadInvalidaException : lanza
-    Monstruo ..> EntidadInvalidaException : lanza
-    EntidadController ..> EntidadNoEncontradaException : lanza
-    SimulacionController ..> EntidadNoEncontradaException : lanza
+
     GlobalExceptionHandler ..> MinecraftException : traduce a HTTP
+    GlobalExceptionHandler ..> EntidadNoEncontradaException : 404
+    GlobalExceptionHandler ..> EntidadInvalidaException : 400
     GlobalExceptionHandler ..> ErrorResponse : devuelve
+```
+
+### 3. REST y persistencia (`rest.controller`, `rest.dto`, `repository`)
+
+```mermaid
+classDiagram
+    direction LR
+
+    class EntidadController {
+        -EntidadVivaRepository repository
+        +EntidadController(EntidadVivaRepository)
+        +crear(EntidadRequest) ResponseEntity~EntidadViva~
+        +listar(String, Integer) List~EntidadViva~
+        +buscar(Long) EntidadViva
+        +reemplazar(Long, EntidadRequest) EntidadViva
+        +actualizar(Long, EntidadRequest) EntidadViva
+        +eliminar(Long) ResponseEntity~Void~
+        -obtener(Long) EntidadViva
+        -construir(EntidadRequest) EntidadViva
+        -aplicarCambios(EntidadViva, EntidadRequest, boolean)
+        -normalizarTipo(String) String
+        -tipoDe(EntidadViva) String
+        -alturaPorDefecto(EntidadViva) double
+    }
+    class SimulacionController {
+        -EntidadVivaRepository repository
+        +SimulacionController(EntidadVivaRepository)
+        +explosion(ExplosionRequest) SimulacionResponse
+    }
+    class ComportamientoController {
+        -EntidadVivaRepository repository
+        +ComportamientoController(EntidadVivaRepository)
+        +obtenerAcciones() List~Map~String, String~~
+        +obtenerExplosivos() List~Map~String, Object~~
+    }
+    class IndexController {
+        +index() Map~String, Object~
+    }
+
+    class JpaRepository~EntidadViva, Long~ {
+        <<interface>>
+    }
+    class EntidadVivaRepository {
+        <<interface>>
+        +findByNombreContainingIgnoreCase(String) List~EntidadViva~
+        +findByVidaGreaterThanEqual(int) List~EntidadViva~
+        +findByNombreContainingIgnoreCaseAndVidaGreaterThanEqual(String, int) List~EntidadViva~
+    }
+
+    class EntidadRequest {
+        -String tipo
+        -String nombre
+        -Integer vida
+        -Double altura
+        -Integer hambre
+        -Boolean controlable
+        -Boolean hostil
+        -Boolean puedeEstarArmado
+        -Boolean domable
+        -Boolean pacifico
+        -Boolean crecen
+        -Integer potenciaExplosiva
+        -List~String~ inventario
+        +getTipo() String
+        +setTipo(String)
+        +getNombre() String
+        +setNombre(String)
+        +getVida() Integer
+        +setVida(Integer)
+        +getAltura() Double
+        +setAltura(Double)
+        +getHambre() Integer
+        +setHambre(Integer)
+        +getControlable() Boolean
+        +setControlable(Boolean)
+        +getHostil() Boolean
+        +setHostil(Boolean)
+        +getPuedeEstarArmado() Boolean
+        +setPuedeEstarArmado(Boolean)
+        +getDomable() Boolean
+        +setDomable(Boolean)
+        +getPacifico() Boolean
+        +setPacifico(Boolean)
+        +getCrecen() Boolean
+        +setCrecen(Boolean)
+        +getPotenciaExplosiva() Integer
+        +setPotenciaExplosiva(Integer)
+        +getInventario() List~String~
+        +setInventario(List~String~)
+    }
+    class ExplosionRequest {
+        <<record>>
+        Long monstruoId
+        Integer potencia
+    }
+    class SimulacionResponse {
+        <<record>>
+        Long monstruoId
+        String monstruo
+        int potencia
+        int escudosConsumidos
+        String sonido
+        List~ResultadoEntidad~ afectadas
+    }
+    class ResultadoEntidad {
+        <<record anidado en SimulacionResponse>>
+        Long id
+        String nombre
+        String tipo
+        int vidaAntes
+        int vidaDespues
+        int escudosConsumidos
+        boolean vivo
+    }
+
+    class EntidadViva {
+        <<externa: domain>>
+    }
+    class PersonajeJugable {
+        <<externa: domain>>
+    }
+    class Monstruo {
+        <<externa: domain>>
+    }
+    class Animal {
+        <<externa: domain>>
+    }
+    class Planta {
+        <<externa: domain>>
+    }
+    class Explosion {
+        <<externa: domain>>
+    }
+    class Explosivo {
+        <<externa: domain>>
+    }
+    class EntidadNoEncontradaException {
+        <<externa: exception>>
+    }
+    class EntidadInvalidaException {
+        <<externa: exception>>
+    }
+
+    JpaRepository <|-- EntidadVivaRepository
+    EntidadVivaRepository ..> EntidadViva : persiste
+
+    EntidadController --> EntidadVivaRepository
+    SimulacionController --> EntidadVivaRepository
+    ComportamientoController --> EntidadVivaRepository
+
+    EntidadController ..> EntidadRequest : recibe
+    EntidadController ..> PersonajeJugable : construye
+    EntidadController ..> Monstruo : construye
+    EntidadController ..> Animal : construye
+    EntidadController ..> Planta : construye
+    EntidadController ..> EntidadNoEncontradaException : lanza
+    EntidadController ..> EntidadInvalidaException : lanza
+
+    SimulacionController ..> ExplosionRequest : recibe
+    SimulacionController ..> SimulacionResponse : devuelve
+    SimulacionController ..> ResultadoEntidad : crea
+    SimulacionController ..> Monstruo : dispara explotar
+    SimulacionController ..> Explosion : lee la potencia
+    SimulacionController ..> EntidadNoEncontradaException : lanza
+    SimulacionController ..> EntidadInvalidaException : lanza
+    SimulacionResponse *-- ResultadoEntidad : afectadas
+
+    ComportamientoController ..> EntidadViva : llama realizarAccionEspecial
+    ComportamientoController ..> Explosivo : lee
 ```
 
 - **Herencia** (`<|--`): `PersonajeJugable` y `PersonajeNoJugable` son entidades vivas; `Monstruo`, `Animal` y `Planta` son personajes no jugables.
