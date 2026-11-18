@@ -14,16 +14,6 @@ public class IndexController {
         return Map.of(
                 "estado", "Servicio activo",
                 "autor", "Adrian",
-                "dominio", "Minecraft",
-                "h2Console", "/h2-console",
-                "endpoints", List.of(
-                        "GET /minecraft/entidades",
-                        "POST /minecraft/entidades",
-                        "GET /minecraft/entidades/{id}",
-                        "PUT /minecraft/entidades/{id}",
-                        "PATCH /minecraft/entidades/{id}",
-                        "DELETE /minecraft/entidades/{id}",
-                        "GET /minecraft/explosivos",
-                        "POST /minecraft/simulacion/explosion"));
+                "dominio", "Minecraft");
     }
 }

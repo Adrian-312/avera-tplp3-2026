@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.avera_tplp3_2026.rest.exception;
+package py.edu.uc.lp3.avera_tplp3_2026.exception;
 
 import java.time.Instant;
 
@@ -10,10 +10,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.servlet.http.HttpServletRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadInvalidaException;
-import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadNoEncontradaException;
-import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.MinecraftException;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ErrorResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -28,6 +24,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalida(EntidadInvalidaException ex,
                                                         HttpServletRequest request) {
         return respuesta(HttpStatus.BAD_REQUEST, ex, request);
+    }
+
+    // La entidad ya murió: su estado es final y no se puede modificar -> 409.
+    @ExceptionHandler(EntidadMuertaException.class)
+    public ResponseEntity<ErrorResponse> handleMuerta(EntidadMuertaException ex,
+                                                      HttpServletRequest request) {
+        return respuesta(HttpStatus.CONFLICT, ex, request);
     }
 
     @ExceptionHandler(MinecraftException.class)
