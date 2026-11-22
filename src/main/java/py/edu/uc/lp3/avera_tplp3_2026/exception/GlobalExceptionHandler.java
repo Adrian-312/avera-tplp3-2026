@@ -1,20 +1,15 @@
-package py.edu.uc.lp3.avera_tplp3_2026.rest.exception;
+package py.edu.uc.lp3.avera_tplp3_2026.exception;
 
 import java.time.Instant;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.servlet.http.HttpServletRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadInvalidaException;
-import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadNoEncontradaException;
-import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.MinecraftException;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ErrorResponse;
-import py.edu.uc.lp3exceptions.IntegracionExternaException;
-import py.edu.uc.lp3exceptions.RechazoExternoException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -31,27 +26,28 @@ public class GlobalExceptionHandler {
         return respuesta(HttpStatus.BAD_REQUEST, ex, request);
     }
 
-    @ExceptionHandler(MinecraftException.class)
-    public ResponseEntity<ErrorResponse> handleBase(MinecraftException ex,
-                                                    HttpServletRequest request) {
-        return respuesta(HttpStatus.BAD_REQUEST, ex, request);
+    // La entidad ya murió: su estado es final y no se puede modificar -> 409.
+    @ExceptionHandler(EntidadMuertaException.class)
+    public ResponseEntity<ErrorResponse> handleMuerta(EntidadMuertaException ex,
+                                                      HttpServletRequest request) {
+        return respuesta(HttpStatus.CONFLICT, ex, request);
     }
 
     @ExceptionHandler(RechazoExternoException.class)
     public ResponseEntity<ErrorResponse> handleRechazoExterno(RechazoExternoException ex,
-                                                               HttpServletRequest request) {
+                                                              HttpServletRequest request) {
         ErrorResponse body = new ErrorResponse(
                 Instant.now().toString(),
                 HttpStatus.BAD_REQUEST.value(),
                 "RECHAZO_" + ex.getCompanero(),
-                ex.getMessage() + " (código externo " + ex.getCodigoExterno() + ")",
+                ex.getMessage(),
                 request.getRequestURI());
         return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(IntegracionExternaException.class)
-    public ResponseEntity<ErrorResponse> handleFalloIntegracion(IntegracionExternaException ex,
-                                                                 HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleFalloExterno(IntegracionExternaException ex,
+                                                            HttpServletRequest request) {
         ErrorResponse body = new ErrorResponse(
                 Instant.now().toString(),
                 HttpStatus.BAD_GATEWAY.value(),
@@ -59,6 +55,12 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
+    }
+
+    @ExceptionHandler(MinecraftException.class)
+    public ResponseEntity<ErrorResponse> handleBase(MinecraftException ex,
+                                                    HttpServletRequest request) {
+        return respuesta(HttpStatus.BAD_REQUEST, ex, request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -81,6 +83,19 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "PARAMETRO_INVALIDO",
                 "El parámetro '" + ex.getName() + "' tiene un valor inválido: " + ex.getValue(),
+                request.getRequestURI());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    // JSON roto o ilegible en el cuerpo de la petición.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleJsonIlegible(HttpMessageNotReadableException ex,
+                                                            HttpServletRequest request) {
+        ErrorResponse body = new ErrorResponse(
+                Instant.now().toString(),
+                HttpStatus.BAD_REQUEST.value(),
+                "CUERPO_ILEGIBLE",
+                "El cuerpo de la petición no es un JSON válido",
                 request.getRequestURI());
         return ResponseEntity.badRequest().body(body);
     }

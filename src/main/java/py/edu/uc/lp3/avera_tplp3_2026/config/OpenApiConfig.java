@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
+import py.edu.uc.lp3.avera_tplp3_2026.constants.ApiPaths;
 import py.edu.uc.lp3.avera_tplp3_2026.constants.Contacto;
 
 @Configuration
@@ -22,11 +23,13 @@ public class OpenApiConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("POO-08 / POO-09 - Minecraft")
+                        .title("POO-09 - Minecraft (A1)")
                         .version("1.0.0")
-                        .description("CRUD REST, simulación de explosiones y escenario cruzado con validaciones externas.")
-                        .contact(new Contact().name("Adrian-312").email(Contacto.A1)))
+                        .description("CRUD de entidades, simulación de explosiones y escenario cruzado: A1 consulta a A2 y a A3 antes de persistir la jugada en H2.")
+                        .contact(new Contact().name(Contacto.A1).url(Contacto.GITHUB)))
                 .servers(List.of(
-                        new Server().url("http://localhost:" + puerto).description("Servicio A1 local")));
+                        new Server().url("http://localhost:" + puerto).description("Servicio A1 local"),
+                        new Server().url("http://localhost:" + puerto + ApiPaths.API_DOCS)
+                                .description("Documento OpenAPI de A1")));
     }
 }

@@ -1,6 +1,6 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,55 +17,55 @@ public class Jugada {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "jugador_id", nullable = false)
     private Long jugadorId;
 
-    @Column(nullable = false)
-    private String nombreJugador;
+    @Column(name = "jugador_nombre", nullable = false)
+    private String jugadorNombre;
 
-    @Column(nullable = false)
+    @Column(name = "monstruo_id", nullable = false)
     private Long monstruoId;
 
-    @Column(nullable = false)
-    private String nombreMonstruo;
+    @Column(name = "monstruo_nombre", nullable = false)
+    private String monstruoNombre;
 
     @Column(nullable = false)
     private int potencia;
 
-    @Column(nullable = false)
+    @Column(name = "escudos_consumidos", nullable = false)
     private int escudosConsumidos;
 
-    @Column(nullable = false)
+    @Column(name = "vida_jugador_despues", nullable = false)
     private int vidaJugadorDespues;
 
-    @Column(nullable = false)
+    @Column(name = "aceptada_por_a2", nullable = false)
     private boolean aceptadaPorA2;
 
-    @Column(nullable = false)
+    @Column(name = "aceptada_por_a3", nullable = false)
     private boolean aceptadaPorA3;
 
     private String motivo;
 
     @Column(nullable = false)
-    private LocalDateTime fecha;
+    private Instant fecha;
 
     protected Jugada() {
     }
 
-    public Jugada(Long jugadorId, String nombreJugador, Long monstruoId, String nombreMonstruo,
+    public Jugada(Long jugadorId, String jugadorNombre, Long monstruoId, String monstruoNombre,
                   int potencia, int escudosConsumidos, int vidaJugadorDespues,
                   boolean aceptadaPorA2, boolean aceptadaPorA3, String motivo) {
         this.jugadorId = jugadorId;
-        this.nombreJugador = nombreJugador;
+        this.jugadorNombre = jugadorNombre;
         this.monstruoId = monstruoId;
-        this.nombreMonstruo = nombreMonstruo;
+        this.monstruoNombre = monstruoNombre;
         this.potencia = potencia;
         this.escudosConsumidos = escudosConsumidos;
         this.vidaJugadorDespues = vidaJugadorDespues;
         this.aceptadaPorA2 = aceptadaPorA2;
         this.aceptadaPorA3 = aceptadaPorA3;
         this.motivo = motivo;
-        this.fecha = LocalDateTime.now();
+        this.fecha = Instant.now();
     }
 
     public Long getId() {
@@ -76,16 +76,16 @@ public class Jugada {
         return jugadorId;
     }
 
-    public String getNombreJugador() {
-        return nombreJugador;
+    public String getJugadorNombre() {
+        return jugadorNombre;
     }
 
     public Long getMonstruoId() {
         return monstruoId;
     }
 
-    public String getNombreMonstruo() {
-        return nombreMonstruo;
+    public String getMonstruoNombre() {
+        return monstruoNombre;
     }
 
     public int getPotencia() {
@@ -112,7 +112,7 @@ public class Jugada {
         return motivo;
     }
 
-    public LocalDateTime getFecha() {
+    public Instant getFecha() {
         return fecha;
     }
 }

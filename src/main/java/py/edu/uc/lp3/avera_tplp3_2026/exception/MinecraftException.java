@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.avera_tplp3_2026.domain.exception;
+package py.edu.uc.lp3.avera_tplp3_2026.exception;
 
 public class MinecraftException extends RuntimeException {
 

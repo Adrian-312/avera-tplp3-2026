@@ -4,27 +4,26 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import py.edu.uc.lp3.avera_tplp3_2026.exception.IntegracionExternaException;
+import py.edu.uc.lp3.avera_tplp3_2026.exception.RechazoExternoException;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
-import py.edu.uc.lp3exceptions.IntegracionExternaException;
-import py.edu.uc.lp3exceptions.RechazoExternoException;
-
 @Component
 public class ReglaExternaClient {
 
-    private static final Logger LOG = LogManager.getLogger(ReglaExternaClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReglaExternaClient.class);
 
     private final Map<Companero, WebClient> clientes;
     private final Map<Companero, String> baseUrls;
@@ -42,20 +41,19 @@ public class ReglaExternaClient {
             @Value("${integracion.client.timeout-seconds}") long timeoutSeconds) {
         this.objectMapper = objectMapper;
         this.clientes = Map.of(
-                Companero.A2, builder.baseUrl(a2BaseUrl).build(),
-                Companero.A3, builder.baseUrl(a3BaseUrl).build());
+                Companero.A2, builder.clone().baseUrl(a2BaseUrl).build(),
+                Companero.A3, builder.clone().baseUrl(a3BaseUrl).build());
         this.baseUrls = Map.of(Companero.A2, a2BaseUrl, Companero.A3, a3BaseUrl);
         this.rutas = Map.of(Companero.A2, a2Path, Companero.A3, a3Path);
         this.timeout = Duration.ofSeconds(timeoutSeconds);
-        LOG.debug("Clientes configurados: A2={}{} timeout={}s; A3={}{} timeout={}s",
-                a2BaseUrl, a2Path, timeoutSeconds, a3BaseUrl, a3Path, timeoutSeconds);
+        LOG.info("Clientes configurados: A2={}{}, A3={}{}, timeout={}s",
+                a2BaseUrl, a2Path, a3BaseUrl, a3Path, timeoutSeconds);
     }
 
     public ValidacionExternaResponse validar(Companero companero, ValidacionExternaRequest payload) {
         WebClient cliente = clientes.get(companero);
         String ruta = rutas.get(companero);
-        LOG.debug("Paso integración {}: armando POST {}{} con payload {}",
-                companero, baseUrls.get(companero), ruta, payload);
+        LOG.debug("A1 -> {}: POST {}{} con {}", companero, baseUrls.get(companero), ruta, payload);
         try {
             RespuestaCruda cruda = cliente.post()
                     .uri(ruta)
@@ -65,33 +63,43 @@ public class ReglaExternaClient {
                             .defaultIfEmpty("")
                             .map(body -> new RespuestaCruda(response.statusCode().value(), body)))
                     .block(timeout);
-            LOG.debug("Paso integración {}: status={} body={}", companero, cruda.status(), cruda.cuerpo());
+            LOG.debug("{} -> A1: status={} body={}", companero, cruda.status(), cruda.cuerpo());
+
             if (cruda.status() >= 400) {
                 String motivo = textoDe(cruda.cuerpo(), "motivo", "mensaje", "message", "detail");
                 String codigo = textoDe(cruda.cuerpo(), "codigo", "code");
                 throw new RechazoExternoException(companero.name(), cruda.status(),
                         codigo != null ? codigo : "HTTP_" + cruda.status(), motivo);
             }
-            ValidacionExternaResponse decision = objectMapper.readValue(
-                    cruda.cuerpo(), ValidacionExternaResponse.class);
-            LOG.debug("Paso integración {}: decisión aceptada={} motivo={}",
-                    companero, decision.aceptada(), decision.motivo());
+            if (cruda.cuerpo() == null || cruda.cuerpo().isBlank()) {
+                throw new IntegracionExternaException(companero.name(),
+                        companero + " devolvió un cuerpo vacío");
+            }
+
+            JsonNode nodo = objectMapper.readTree(cruda.cuerpo());
+            boolean aceptada = nodo.path("aceptada").asBoolean(false);
+            for (String clave : List.of("acepta", "aceptado", "aprobado", "valido", "valida", "ok")) {
+                if (nodo.has(clave)) {
+                    aceptada = nodo.get(clave).asBoolean(aceptada);
+                    break;
+                }
+            }
+            ValidacionExternaResponse decision = new ValidacionExternaResponse(
+                    aceptada,
+                    valorTexto(nodo, "motivo", "mensaje", "razon", "message", "detail"),
+                    valorTexto(nodo, "codigo", "code", "resultado"));
+            LOG.debug("Decisión de {}: aceptada={}, motivo={}", companero, decision.aceptada(), decision.motivo());
             return decision;
+        } catch (RechazoExternoException ex) {
+            throw ex;
         } catch (IntegracionExternaException ex) {
-            LOG.error("Integración con {} rechazó o falló: {}", companero, ex.getMessage());
             throw ex;
         } catch (JacksonException ex) {
-            LOG.error("Integración con {} devolvió un cuerpo no comprensible: {}", companero, ex.getMessage());
             throw new IntegracionExternaException(companero.name(),
                     "Respuesta no comprensible de " + companero + ": " + ex.getMessage());
         } catch (RuntimeException ex) {
-            LOG.error("Integración con {} no disponible: {}", companero, ex.getMessage());
             throw new IntegracionExternaException(companero.name(),
                     "No se pudo consultar " + companero + ": " + ex.getMessage());
-        } catch (Exception ex) {
-            LOG.error("Integración con {} devolvió un cuerpo no comprensible: {}", companero, ex.getMessage());
-            throw new IntegracionExternaException(companero.name(),
-                    "Respuesta no comprensible de " + companero + ": " + ex.getMessage());
         }
     }
 
@@ -106,10 +114,19 @@ public class ReglaExternaClient {
                     return nodo.get(clave).asText();
                 }
             }
-        } catch (Exception ex) {
+        } catch (JacksonException ex) {
             LOG.debug("El cuerpo no era JSON, se usa como texto: {}", ex.getMessage());
         }
         return cuerpo.length() > 200 ? cuerpo.substring(0, 200) : cuerpo;
+    }
+
+    private String valorTexto(JsonNode nodo, String... claves) {
+        for (String clave : claves) {
+            if (nodo.hasNonNull(clave)) {
+                return nodo.get(clave).asText();
+            }
+        }
+        return null;
     }
 
     private record RespuestaCruda(int status, String cuerpo) {

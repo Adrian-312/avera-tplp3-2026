@@ -21,7 +21,7 @@ import py.edu.uc.lp3.avera_tplp3_2026.service.EscenarioService;
 
 @RestController
 @RequestMapping(ApiPaths.ESCENARIO)
-@Tag(name = "Escenario cruzado", description = "Escenario propio de A1: validaciones de A2 y A3 antes de persistir en H2.")
+@Tag(name = "Escenario cruzado", description = "Escenario propio de A1: consulta A2 y A3 y guarda la jugada sólo si ambos aceptan.")
 public class EscenarioController {
 
     private final EscenarioService escenarioService;
@@ -32,18 +32,20 @@ public class EscenarioController {
 
     @PostMapping("/explosion-validada")
     @Operation(summary = "Explosión aceptada por A2 y A3",
-            description = "Consulta A2 y luego A3. Si ambos aceptan, aplica las reglas locales y guarda la jugada; si alguno rechaza, la base queda igual y el error nombra al compañero.")
+            description = "Consulta primero a A2 (escudos del jugador) y después a A3 (potencia de la explosión). Si ambos aceptan, A1 aplica sus reglas locales y persiste la jugada; si alguno rechaza, la base queda igual y el código de error nombra al compañero.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Jugada persistida después de ambas aceptaciones"),
-            @ApiResponse(responseCode = "400", description = "Rechazo de A2 o de A3, o dato local inválido"),
-            @ApiResponse(responseCode = "502", description = "Algún compañero no respondió")
+            @ApiResponse(responseCode = "400", description = "Rechazo de A2 (RECHAZO_A2) o de A3 (RECHAZO_A3), o dato local inválido"),
+            @ApiResponse(responseCode = "404", description = "No existe el jugador o el monstruo indicado"),
+            @ApiResponse(responseCode = "502", description = "A2 o A3 no respondió (FALLO_A2 / FALLO_A3)")
     })
     public ResponseEntity<EscenarioResponse> explosionValidada(@RequestBody EscenarioRequest request) {
         return ResponseEntity.status(201).body(escenarioService.ejecutar(request));
     }
 
     @GetMapping
-    @Operation(summary = "Listar jugadas persistidas", description = "Permite comprobar que el escenario exitoso quedó guardado y que un rechazo no agregó filas.")
+    @Operation(summary = "Listar jugadas persistidas",
+            description = "Permite comprobar que el escenario feliz quedó guardado y que un rechazo no agregó filas.")
     public List<Jugada> listar() {
         return escenarioService.listar();
     }

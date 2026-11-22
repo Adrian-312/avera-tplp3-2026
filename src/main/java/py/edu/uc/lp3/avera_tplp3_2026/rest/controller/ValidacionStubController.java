@@ -14,7 +14,7 @@ import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
 
 @RestController
 @RequestMapping(ApiPaths.STUB)
-@Tag(name = "Stubs temporales A2/A3", description = "Reemplazos locales de los compañeros mientras se definen los grupos. Se desactivan cambiando integracion.a2.base-url y integracion.a3.base-url.")
+@Tag(name = "Stubs temporales A2/A3", description = "Reemplazos locales de los compañeros mientras no esté definido el grupo. Se dejan de usar configurando A2_BASE_URL y A3_BASE_URL reales.")
 public class ValidacionStubController {
 
     private final int escudosMinimos;

@@ -1,10 +1,12 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
+import static py.edu.uc.lp3.avera_tplp3_2026.constants.MinecraftConstants.TIPO_PLANTA;
+
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
-@DiscriminatorValue("planta")
+@DiscriminatorValue(TIPO_PLANTA)
 public class Planta extends PersonajeNoJugable {
 
     private boolean estatico = true;

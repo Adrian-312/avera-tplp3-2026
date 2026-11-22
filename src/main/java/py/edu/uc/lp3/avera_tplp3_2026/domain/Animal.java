@@ -1,10 +1,12 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
+import static py.edu.uc.lp3.avera_tplp3_2026.constants.MinecraftConstants.TIPO_ANIMAL;
+
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
-@DiscriminatorValue("animal")
+@DiscriminatorValue(TIPO_ANIMAL)
 public class Animal extends PersonajeNoJugable {
 
     private boolean domable;
@@ -39,16 +41,19 @@ public class Animal extends PersonajeNoJugable {
         System.out.println(getNombre() + " (Animal) está deambulando tranquilamente.");
     }
 
-    public void actualizarRasgos(boolean domable, boolean pacifico) {
-        this.domable = domable;
-        this.pacifico = pacifico;
-    }
-
     public boolean isDomable() {
         return domable;
     }
 
+    public void setDomable(boolean domable) {
+        this.domable = domable;
+    }
+
     public boolean isPacifico() {
         return pacifico;
+    }
+
+    public void setPacifico(boolean pacifico) {
+        this.pacifico = pacifico;
     }
 }

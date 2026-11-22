@@ -461,5 +461,5 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/maven,visualstudio,java,visualstudiocode
 
-### H2 local ###
+# Base de datos H2 local
 data/

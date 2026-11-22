@@ -1,106 +1,98 @@
-# Bitácora de asistencia de inteligencia artificial
+# Bitácora de uso de IA
 
-**Asignatura:** Lenguaje de Programación 3 (CYT646)  
-**Alumno:** Adrian (GitHub: `Adrian-312`)  
-**Dominio:** Minecraft
+- **Asistente:** Claude (Anthropic), usado desde la interfaz web claude.ai.
+- **Modelo de LLM:** Claude Sonnet 5.5
+- **Fecha:** 9 de noviembre de 2026
+
+## Resumen de prompts
+
+1. Pasé el enunciado de POO-08, los 17 archivos Java del proyecto (dominio, excepciones y controllers) y pedí los pasos para completar la tarea y la corrección de lo que estuviera mal.
+2. Subí `pom.xml`, `application.properties` y los DTO compilados, y pedí que me explicara cómo hacer cada pieza que faltaba (porque no sabía hacerlas) y si estaban bien las clases `Explosivo` y `Explosion`.
+3. Pegué el error de compilación de Maven y el código de mi `GlobalExceptionHandler`; pedí corregir el conflicto.
+4. Pedí ayuda con el `.gitignore`, con las URL para probar, con la consola H2 y con importar la colección en Insomnia (capturas de pantalla de los errores que me salían).
+5. Pregunté si era correcto que el Creeper siga apareciendo en el listado después de explotar, pedí completar el README con lo que pedía la tarea y actualizar el diagrama de clases, cómo hacer el merge de mi rama `desarrollo` a `main` y si la tarea pedía un `RUN.md`.
+6. Pedí separar la documentación: un `RUN.md` con las instrucciones de ejecución y un `README.md` sin la parte de entregas, y que corrigiera ambos.
+7. Pegué la devolución de mi docente (faltaba la capa service, las transacciones estaban en el controller y el dominio lanzaba excepciones) junto con la estructura de carpetas del template (`constants`, `domain`, `exception`, `rest/controller`, `repository`, `service/impl`) y pedí el refactor.
+8. Pegué el error de compilación de un test viejo (`SimulacionDomainTest`) y pedí cómo dejar un único test llamado `ApplicationTest.java`, como pide el template.
+
+## Qué aportó la IA
+
+- Revisión del código existente contra las consignas del enunciado y lista de correcciones:
+  - `listar` usaba una consulta "mayor que" para un parámetro llamado `vidaMinima`, y ignoraba `vidaMinima` si también venía `nombre`.
+  - `quitarDelInventario` distinguía mayúsculas y `consumirItem` no.
+  - Se quitaron los endpoints con verbo en la URL (`/crear-jugador`, `/crear-monstruo`, `/danio`), que no seguían la convención REST.
+- Código nuevo: `EntidadVivaRepository`. El `GlobalExceptionHandler` y el `ErrorResponse` ya existían en mi proyecto; la IA asumió que faltaban y los pisó, lo que causó un error de compilación. Se corrigió dejando un `ErrorResponse` (con `timestamp`, `status`, `codigo`, `mensaje` y `path`) y agregando a mi handler el manejo del JSON ilegible.
+- Refactor a tres capas según el template: `service` e `impl` con la lógica, las validaciones y las transacciones; controllers delgados; dominio solo con estado; carpetas `constants` y `exception`. Se verificó con un compilador y con una prueba de la lógica de los services en memoria.
+- Un único `ApplicationTest.java` (prueba de integración con H2 en memoria) que reemplaza a los tests viejos.
+- Documentación y pruebas: la colección de Insomnia, el README (con diagrama Mermaid, invariantes y recorrido de prueba), esta bitácora y el documento de especificaciones.
+
+## Qué hice yo
+
+Revisé y probé lo generado: arranqué el servicio, recorrí la colección de Insomnia y comprobé en el listado que el estado se persiste después de la simulación. Resolví el conflicto del handler y subí los cambios al repositorio.
 
 ---
 
-## Ejercicio POO-08 — CRUD REST, H2, explosiones y excepciones
+## Entrada del 17 de noviembre de 2026
 
-**Fecha de trabajo:** 9 de noviembre de 2026
-
-### Asistente y modelo
-
-- **Marca del asistente:** opencode (agente de programación en la terminal).
-- **Modelo exacto de LLM:** `big-pickle` (modelo informado por la herramienta: `opencode/big-pickle`).
+- **Asistente:** Claude (Anthropic), usado desde la interfaz web claude.ai.
+- **Modelo de LLM:** Claude Sonnet 5.5 (identificador `claude-sonnet-5-5`)
+- **Fecha:** 17 de noviembre de 2026
 
 ### Resumen de prompts
 
-1. Pedí leer el enunciado de POO-08 y la rúbrica, y comparar lo que ya tenía en el repositorio con lo que faltaba.
-2. Pedí corregir el enfoque: el trabajo es de Minecraft y la simulación tenía que ser de **explosiones**, no de ataques. Se reemplazó la interface `Atacante` por `Explosivo`.
-3. Pedí configurar H2 en archivo, la consola H2 y las propiedades de JPA explicadas para el README.
-4. Pedí mapear la familia `EntidadViva` con JPA usando una sola tabla y un discriminador, manteniendo constructores simples, sobrecargados y el constructor vacío protegido para JPA.
-5. Pedí implementar el repositorio Spring Data, el CRUD REST completo, la interface `Explosivo` y la simulación persistida con las dos reglas: onda expansiva y escudos de bloque.
-6. Pedí crear la jerarquía de excepciones del dominio (`MinecraftException`, `EntidadNoEncontradaException`, `EntidadInvalidaException`) y un handler HTTP por tipo.
-7. Pedí generar la colección de Insomnia con el CRUD, la simulación, el POST ilegal, el id inexistente y un pedido por cada excepción hija.
-8. Pedí actualizar el README, la bitácora, el documento de especificaciones y separar el trabajo en commits explicativos.
-9. Pedí compilar, correr las pruebas y probar los endpoints con `curl` antes de cerrar la entrega.
+1. Pregunté cómo probar desde Insomnia después del refactor y si había que volver a importar la colección (respuesta: no; hay que reiniciar el servicio y borrar la carpeta `data/`).
+2. Pegué la devolución de mi docente: un `PATCH` con `vida: 20` revive a un Creeper que ya explotó (el criterio quedó en 0; el service debe rechazar `PUT` y `PATCH` sobre una entidad muerta con un 409 y una excepción propia). Pedí cómo comprobar el problema y que lo corrigiera.
+3. Pregunté cómo cambiar la URL del pedido que dupliqué en Insomnia (no me dejaba editar la variable `jugador_id`) y qué otros errores traía el problema del Creeper que revive.
+4. Pregunté si la corrección cubría a todos los tipos de entidad, si arreglaba `GET /acciones` con las entidades muertas y en qué parte del código un `PUT` sin vida dejaba la vida en 20. Pedí un único paquete con todo: la regla de entidad muerta, el filtro de `/acciones` y `/explosivos`, y el `PUT` que exige `vida`.
 
-### Qué aportó la IA y qué hice yo
+### Qué aportó la IA
 
-- La IA propuso el código de entidades, repositorio, DTOs, controllers, excepciones, handler y colección Insomnia.
-- Yo revisé el modelo de Minecraft, mantuve los nombres de mis clases (`PersonajeJugable`, `Monstruo`, `Animal`, `Planta`) y verifiqué que la simulación represente una explosión real del juego.
-- Yo ejecuté `./mvnw spring-boot:run`, probé los endpoints con `curl`, abrí la consola H2 y organicé los commits en Git.
+- Reprodujo el problema en mi código antes de corregirlo, con una prueba en memoria: un `PATCH` con `vida: 20` y un `PUT` sin `vida` dejaban al Creeper muerto con vida 20 y `vivo: true`.
+- Auditó el código y listó otros fallos de la misma familia (estados imposibles con entidades muertas):
+  - `GET /minecraft/acciones` y `GET /minecraft/explosivos` seguían listando a las entidades muertas (un Creeper muerto "rugía y perseguía").
+  - Un `POST` con `vida: 0` crea una entidad que nace muerta.
+  - Un `PUT` sin `vida` sobre una entidad viva la curaba a 20.
+  - Un `PATCH` con `vida: 0` mata a una entidad sin pasar por las reglas del juego.
+  - No hay control de concurrencia (`@Version`); este punto es teórico y no se probó.
+- Código nuevo y cambios, siguiendo el template:
+  - `EntidadMuertaException` (en `exception/`, código `ENTIDAD_MUERTA`) y un handler que la responde con 409 en `GlobalExceptionHandler`.
+  - `EntidadServiceImpl`: `rechazarSiEstaMuerta` en `PUT` y `PATCH` (la regla vive en el service, no en la Entity) y `PUT` que exige `vida`.
+  - `ComportamientoServiceImpl`: solo las entidades vivas figuran en `/acciones` y `/explosivos`.
+  - `ApplicationTest.java`: cinco pruebas nuevas, 13 en total (sigue siendo un único archivo de test).
+- Verificación: compilación del código y pruebas de la lógica en memoria con los cuatro tipos (jugador, monstruo, animal y planta). No pudo ejecutar Spring ni H2 en su entorno, así que la prueba real es `./mvnw test`.
+- Error de la IA que debe quedar escrito: ni en su revisión inicial ni al hacer el refactor detectó que el CRUD permitía revivir una entidad muerta. Lo señaló mi docente, y la IA lo reconoció y lo corrigió recién después.
 
-### Verificación realizada
+### Qué hice yo
 
-- `./mvnw test`: las pruebas de dominio pasan.
-- `GET /`: servicio activo.
-- `POST /minecraft/entidades`: 201 con `id`.
-- `GET /minecraft/entidades`: se ve lo persistido.
-- `PUT` y `PATCH`: el cambio se conserva después de un `GET`.
-- `DELETE`: 204; el `GET` posterior da 404.
-- `GET /minecraft/explosivos`: responde con `PersonajeJugable` y `Monstruo` a través de la interfaz.
-- `POST /minecraft/simulacion/explosion`: el Creeper muere, los escudos se consumen y la vida de los afectados queda persistida.
-- Errores: 404 `ENTIDAD_NO_ENCONTRADA` y 400 `ENTIDAD_INVALIDA` con JSON distinto.
-
----
-
-## Historial anterior
-
-### Ejercicio POO-06 — Revisión, paquetes, constructores y sobrecarga
-
-- **Asistente:** Claude (Anthropic), desde la interfaz web.
-- **Modelo:** Claude Sonnet 5.5 (`claude-sonnet-5-5`).
-- Se trabajó en paquetes `domain` y `rest/controller`, constructores simples y sobrecargados, encapsulamiento de `EntidadViva` y validaciones en constructores.
-- Prompts principales: revisar paquetes, agregar constructores, quitar setters públicos, explicar sobrecarga y sobreescritura, resolver permisos de `mvnw` y armar commits.
-
-### Ejercicio de interfaces — 29/10/2026
-
-- **Asistente:** opencode, modelo `big-pickle`.
-- Se agregó una interface de dominio y un endpoint que la usa con dos clases de familias distintas.
-- En POO-08 esa interface se reemplazó por `Explosivo`, porque la simulación de este trabajo es de explosiones.
+- Reproduje el problema en Insomnia duplicando el pedido `PATCH` y comprobé que no solo el Creeper revivía: también se podía revivir a un animal y a un monstruo cualquiera.
+- Decidí qué correcciones incluir en el paquete: la regla de entidad muerta con su 409, el filtro de `/acciones` y `/explosivos`, y el `PUT` que exige `vida`.
 
 ---
 
-## Preparación del challenge POO-09 — APIs cruzadas
+## Entrada del 22 de noviembre de 2026
 
-**Fecha de trabajo:** 22 de noviembre de 2026
-**Rama local creada:** `poo09-preparacion` (sin commit; el usuario la subirá a su repo)
-
-### Asistente y modelo
-
-- **Marca del asistente:** opencode (agente de programación en la terminal).
-- **Modelo exacto de LLM:** `big-pickle` (modelo informado por la herramienta: `opencode/big-pickle`).
+- **Asistente:** OpenCode, usado desde la CLI en el repositorio local.
+- **Modelo de LLM:** `opencode/big-pickle`
+- **Fecha:** 22 de noviembre de 2026
 
 ### Resumen de prompts
 
-1. Pedí que no se reemplazara el contenido de `BITACORA.md` ni del `README.md`, sino que se agregaran las líneas correspondientes a lo hecho hoy, y que dejara todo preparado antes de la parte grupal.
-2. Pedí crear una rama local nueva para este trabajo.
-3. Reenvié los prompts que circularon en la comisión, como referencia de lo que podía venir: consumir `https://restful-api.dev/` / `https://api.restful-api.dev/objects` con WebClient; agregar OpenAPI y Swagger UI a todos los servicios REST; examinar un OpenAPI ajeno y combinar una regla externa con la lógica propia; configurar el puerto de forma externalizable (referencia de Baeldung); hacer diagramas Mermaid de secuencias, separar el camino feliz de los rechazos y agregar log4j en nivel DEBUG para todos los pasos de integración.
-4. Pedí que, si no había nada que hacer sin los datos del grupo, lo indicara; como sí había infraestructura dependiente sólo de este repo, se implementó completa con stubs temporales para A2 y A3.
-5. Pedí aclarar el alcance: se preparó el escenario cruzado con validadores reemplazables y stubs locales para poder probar hoy el camino feliz y un rechazo por cada compañero.
+1. Pedí completar POO-09 en el proyecto sin borrar archivos, sin hacer commits, manteniendo el template y dejando para después solo lo que depende del grupo (A2/A3).
+2. Pedí continuar con los pasos pendientes cuando se detuvo la sesión anterior.
 
-### Qué aportó la IA y qué hice yo
+### Qué aportó la IA
 
-- La IA agregó springdoc-openapi 3.2.0 y Swagger UI, WebClient, Log4j2, la entidad `Jugada`, el repositorio, el servicio de escenario, los clientes hacia A2/A3, los stubs temporales, el manejo de errores `RECHAZO_A2`, `RECHAZO_A3`, `FALLO_A2` y `FALLO_A3`, la colección de Insomnia y los documentos `docs/POO09-PREPARACION.md` y `docs/POO09-APLICADO.md`.
-- La IA dejó marcados como **PENDIENTE** los datos que todavía no existen: nombres de A2 y A3, URLs de sus OpenAPI, contratos reales de mensajes, estado de la corrección de POO-08 y hash del commit final.
-- Yo elegí crear la rama local `poo09-preparacion`, revisé el alcance con la herramienta de preguntas y voy a subir el trabajo a mi repositorio cuando se complete la parte grupal.
+- Leyó los enunciados de POO-09 y el estado del repositorio; identificó POO-08 y sus observaciones pendientes.
+- Cerró en código las observaciones conocidas: `validarVida(1..20)`, `@Version`, `EntidadMuertaException` con 409, filtro de entidades muertas en `/acciones` y `/explosivos`, y `PUT` que exige `vida`.
+- Agregó springdoc, el OpenAPI propio, anotaciones en los controllers y la sección de errores del escenario.
+- Implementó el consumo de A2/A3 con `WebClient`, el escenario `POST /minecraft/escenarios/explosion-validada`, la entidad `Jugada`, el historial `GET /minecraft/escenarios` y los stubs temporales.
+- Agregó tests para el camino feliz, el rechazo de A2 y el de A3. Verificación final: `./mvnw test` → 18 tests, 0 fallos, 0 errores.
+- Levantó el servicio con H2 en memoria, recorrió el flujo con `curl` y capturó las respuestas reales para la colección de Insomnia.
+- Dos correcciones durante la verificación: `ReglaExternaClient` dejó de compartir el `WebClient.Builder` entre A2 y A3, y `escudosConsumidos` pasó a informar solo los escudos del jugador del escenario (no el total de todas las entidades).
+- Documentación nueva o actualizada: `README.md`, `RUN.md`, `docs/POO09-APLICADO.md`, `insomnia/poo09-insomnia.json`, `insomnia/README.md` y `insomnia/respuestas-ejemplo.md`. La colección de POO-08 se conservó sin cambios.
+- No hizo commit: el enlace de entrega quedó como `https://github.com/Adrian-312/avera-tplp3-2026/commit/<HASH_DEL_COMMIT>`.
 
-### Verificación realizada
+### Qué hice yo
 
-- `./mvnw test`: pasan las 5 pruebas (4 de dominio y la carga del contexto con los nuevos beans).
-- `GET /v3/api-docs`: aparecen CRUD, simulación, integración, escenario y stubs; `GET /swagger-ui.html` disponible.
-- `POST /minecraft/integracion/objeto` con `objetoId=1`: 200 con `Google Pixel 6 Pro`, potencia 10, 2 escudos consumidos y vida 20.
-- Escenario feliz con jugador de 2 escudos y monstruo nuevo, potencia 6: 201 con `jugadaId=1`, `aceptadaPorA2=true` y `aceptadaPorA3=true`; `GET /minecraft/escenarios` muestra la jugada.
-- Rechazo de A2 (jugador sin escudo): 400 con `codigo=RECHAZO_A2` y `SIN_ESCUDO`; la cantidad de jugadas sigue en 1.
-- Rechazo de A3 (potencia 10): 400 con `codigo=RECHAZO_A3` y `POTENCIA_ALTA`; la cantidad de jugadas sigue en 1.
-- Los logs DEBUG muestran los pasos de integración en consola y en `logs/integracion.log`.
-
-### Lo que falta para la entrega final
-
-- Completar el mapa A1/A2/A3 con los compañeros reales.
-- Leer sus OpenAPI y adaptar `ValidacionExternaRequest` y `ValidacionExternaResponse` a esos contratos.
-- Cambiar `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL` y `A3_VALIDATE_PATH`, o dejar documentado qué pasó si un compañero no responde.
-- Definir la situación de POO-08 para los 3 puntos y reemplazar los enlaces al commit final en README y `docs/POO09-APLICADO.md`.
+- Elegí el escenario del Creeper, el orden A2 → A3 y las reglas de los rechazos (`RECHAZO_*` = 400, `FALLO_*` = 502).
+- Confirmé que no se borrara ningún archivo y que la parte del grupo quedara marcada como **PENDIENTE** hasta tener los OpenAPI de A2 y A3.

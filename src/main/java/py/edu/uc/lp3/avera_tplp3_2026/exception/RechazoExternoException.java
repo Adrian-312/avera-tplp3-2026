@@ -1,4 +1,4 @@
-package py.edu.uc.lp3exceptions;
+package py.edu.uc.lp3.avera_tplp3_2026.exception;
 
 public class RechazoExternoException extends IntegracionExternaException {
 
@@ -6,7 +6,7 @@ public class RechazoExternoException extends IntegracionExternaException {
     private final String codigoExterno;
 
     public RechazoExternoException(String companero, int statusExterno, String codigoExterno, String motivo) {
-        super(companero, "Rechazo de " + companero + ": " + motivo);
+        super(companero, "Rechazo de " + companero + ": " + motivo + " (código externo " + codigoExterno + ")");
         this.statusExterno = statusExterno;
         this.codigoExterno = codigoExterno;
     }
