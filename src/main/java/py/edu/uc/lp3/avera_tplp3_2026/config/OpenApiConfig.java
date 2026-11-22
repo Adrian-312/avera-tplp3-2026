@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
+import py.edu.uc.lp3.avera_tplp3_2026.constants.Contacto;
 
 @Configuration
 public class OpenApiConfig {
@@ -24,7 +25,7 @@ public class OpenApiConfig {
                         .title("POO-08 / POO-09 - Minecraft")
                         .version("1.0.0")
                         .description("CRUD REST, simulación de explosiones y escenario cruzado con validaciones externas.")
-                        .contact(new Contact().name("Adrian-312")))
+                        .contact(new Contact().name("Adrian-312").email(Contacto.A1)))
                 .servers(List.of(
                         new Server().url("http://localhost:" + puerto).description("Servicio A1 local")));
     }

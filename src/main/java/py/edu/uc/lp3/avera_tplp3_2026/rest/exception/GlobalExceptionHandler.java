@@ -13,8 +13,8 @@ import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadInvalidaException;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadNoEncontradaException;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.MinecraftException;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ErrorResponse;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.integration.IntegracionExternaException;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.integration.RechazoExternoException;
+import py.edu.uc.lp3exceptions.IntegracionExternaException;
+import py.edu.uc.lp3exceptions.RechazoExternoException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

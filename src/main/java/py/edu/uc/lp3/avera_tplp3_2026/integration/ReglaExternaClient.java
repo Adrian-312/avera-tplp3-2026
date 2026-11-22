@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.avera_tplp3_2026.rest.integration;
+package py.edu.uc.lp3.avera_tplp3_2026.integration;
 
 import java.time.Duration;
 import java.util.List;
@@ -16,8 +16,10 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.ValidacionExternaRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.ValidacionExternaResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
+import py.edu.uc.lp3exceptions.IntegracionExternaException;
+import py.edu.uc.lp3exceptions.RechazoExternoException;
 
 @Component
 public class ReglaExternaClient {

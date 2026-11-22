@@ -12,11 +12,11 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="py.edu.uc.lp3.avera_tplp3_2026.rest.integration" level="DEBUG" additivity="false">
+        <Logger name="py.edu.uc.lp3.avera_tplp3_2026.integration" level="DEBUG" additivity="false">
             <AppenderRef ref="CONSOLA"/>
             <AppenderRef ref="ARCHIVO"/>
         </Logger>
-        <Logger name="py.edu.uc.lp3.avera_tplp3_2026.service" level="DEBUG" additivity="false">
+        <Logger name="py.edu.uc.lp3.avera_tplp3_2026.service.impl" level="DEBUG" additivity="false">
             <AppenderRef ref="CONSOLA"/>
             <AppenderRef ref="ARCHIVO"/>
         </Logger>

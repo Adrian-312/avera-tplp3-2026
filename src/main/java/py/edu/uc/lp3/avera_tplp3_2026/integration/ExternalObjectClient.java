@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.avera_tplp3_2026.rest.integration;
+package py.edu.uc.lp3.avera_tplp3_2026.integration;
 
 import java.time.Duration;
 
@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.ExternalObjectResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ExternalObjectResponse;
+import py.edu.uc.lp3exceptions.IntegracionExternaException;
 
 @Component
 public class ExternalObjectClient {

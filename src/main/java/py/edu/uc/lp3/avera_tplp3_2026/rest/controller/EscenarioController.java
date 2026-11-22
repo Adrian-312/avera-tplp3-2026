@@ -13,23 +13,21 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import py.edu.uc.lp3.avera_tplp3_2026.constants.ApiPaths;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Jugada;
-import py.edu.uc.lp3.avera_tplp3_2026.repository.JugadaRepository;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.EscenarioRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.EscenarioResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.service.EscenarioService;
 
 @RestController
-@RequestMapping("/minecraft/escenarios")
+@RequestMapping(ApiPaths.ESCENARIO)
 @Tag(name = "Escenario cruzado", description = "Escenario propio de A1: validaciones de A2 y A3 antes de persistir en H2.")
 public class EscenarioController {
 
-    private final EscenarioService service;
-    private final JugadaRepository jugadaRepository;
+    private final EscenarioService escenarioService;
 
-    public EscenarioController(EscenarioService service, JugadaRepository jugadaRepository) {
-        this.service = service;
-        this.jugadaRepository = jugadaRepository;
+    public EscenarioController(EscenarioService escenarioService) {
+        this.escenarioService = escenarioService;
     }
 
     @PostMapping("/explosion-validada")
@@ -41,12 +39,12 @@ public class EscenarioController {
             @ApiResponse(responseCode = "502", description = "Algún compañero no respondió")
     })
     public ResponseEntity<EscenarioResponse> explosionValidada(@RequestBody EscenarioRequest request) {
-        return ResponseEntity.status(201).body(service.ejecutar(request));
+        return ResponseEntity.status(201).body(escenarioService.ejecutar(request));
     }
 
     @GetMapping
     @Operation(summary = "Listar jugadas persistidas", description = "Permite comprobar que el escenario exitoso quedó guardado y que un rechazo no agregó filas.")
     public List<Jugada> listar() {
-        return jugadaRepository.findAll();
+        return escenarioService.listar();
     }
 }

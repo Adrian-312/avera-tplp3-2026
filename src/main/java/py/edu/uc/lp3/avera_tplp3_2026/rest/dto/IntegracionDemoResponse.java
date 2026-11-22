@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion;
+package py.edu.uc.lp3.avera_tplp3_2026.rest.dto;
 
 import java.util.List;
 import java.util.Map;

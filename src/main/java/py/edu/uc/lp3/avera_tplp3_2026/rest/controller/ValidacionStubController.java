@@ -8,11 +8,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.ValidacionExternaRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.integracion.ValidacionExternaResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.constants.ApiPaths;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
 
 @RestController
-@RequestMapping("/integracion/stub")
+@RequestMapping(ApiPaths.STUB)
 @Tag(name = "Stubs temporales A2/A3", description = "Reemplazos locales de los compañeros mientras se definen los grupos. Se desactivan cambiando integracion.a2.base-url y integracion.a3.base-url.")
 public class ValidacionStubController {
 

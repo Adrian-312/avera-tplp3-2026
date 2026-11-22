@@ -13,9 +13,11 @@ Este documento deja preparado todo lo que depende sólo de este repositorio: Ope
 | Pieza | Archivo | Función |
 |---|---|---|
 | OpenAPI + Swagger UI | `pom.xml` (`springdoc-openapi-starter-webmvc-ui:3.2.0`), `config/OpenApiConfig.java`, `application.properties` | Publica `/v3/api-docs` y `/swagger-ui.html`. Todos los controllers tienen `@Tag`; la simulación y el escenario tienen `@Operation` y `@ApiResponse`. |
-| WebClient | `config/WebClientConfig.java`, `rest/integration/ExternalObjectClient.java` | Consulta `https://api.restful-api.dev/objects/{id}` con `WebClient` y combina el resultado con las reglas locales de explosiones y escudos. |
-| Clientes de A2/A3 | `rest/integration/ReglaExternaClient.java` | Dos `WebClient` independientes, uno por compañero, con URL, ruta y timeout configurables. |
-| Escenario persistido | `domain/Jugada.java`, `repository/JugadaRepository.java`, `service/EscenarioService.java`, `rest/controller/EscenarioController.java` | Consulta A2 y A3, persiste la jugada sólo si ambos aceptan y atribuye el rechazo. |
+| Constantes | `constants/ApiPaths.java`, `constants/Contacto.java` | Rutas REST y contacto centralizados, como en el template de la cátedra. |
+| WebClient | `config/WebClientConfig.java`, `integration/ExternalObjectClient.java` | Consulta `https://api.restful-api.dev/objects/{id}` con `WebClient` y combina el resultado con las reglas locales de explosiones y escudos. |
+| Clientes de A2/A3 | `integration/ReglaExternaClient.java` | Dos `WebClient` independientes, uno por compañero, con URL, ruta y timeout configurables. |
+| Escenario persistido | `domain/Jugada.java`, `repository/JugadaRepository.java`, `service/EscenarioService.java`, `service/impl/EscenarioServiceImpl.java`, `rest/controller/EscenarioController.java` | Consulta A2 y A3, persiste la jugada sólo si ambos aceptan y atribuye el rechazo. |
+| Errores de integración | `py/edu/uc/lp3exceptions/` | `IntegracionExternaException` y `RechazoExternoException` en el paquete de excepciones del template. |
 | Stubs temporales | `rest/controller/ValidacionStubController.java` | Simulan A2 y A3 mientras no existen los OpenAPI reales. Sirven para probar hoy el feliz y cada rechazo. |
 | Errores | `rest/exception/GlobalExceptionHandler.java` | Traduce `RECHAZO_A2`, `RECHAZO_A3` (400) y `FALLO_A2`, `FALLO_A3` (502) al JSON de error del proyecto. |
 | Log4j2 debug | `pom.xml`, `src/main/resources/log4j2.xml` | Logs DEBUG de cada paso de la integración en consola y en `logs/integracion.log`. |
@@ -204,8 +206,8 @@ En los tres casos de escenario se comprobó con `GET /minecraft/escenarios` que 
 
 `src/main/resources/log4j2.xml` define:
 
-- `py.edu.uc.lp3.avera_tplp3_2026.rest.integration` → DEBUG.
-- `py.edu.uc.lp3.avera_tplp3_2026.service` → DEBUG.
+- `py.edu.uc.lp3.avera_tplp3_2026.integration` → DEBUG.
+- `py.edu.uc.lp3.avera_tplp3_2026.service.impl` → DEBUG.
 - Root → INFO para no inundar con logs de framework.
 - Salida en consola y en `logs/integracion.log` (carpeta ignorada por Git).
 
