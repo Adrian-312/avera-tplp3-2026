@@ -61,3 +61,46 @@
 - **Asistente:** opencode, modelo `big-pickle`.
 - Se agregó una interface de dominio y un endpoint que la usa con dos clases de familias distintas.
 - En POO-08 esa interface se reemplazó por `Explosivo`, porque la simulación de este trabajo es de explosiones.
+
+---
+
+## Preparación del challenge POO-09 — APIs cruzadas
+
+**Fecha de trabajo:** 22 de noviembre de 2026
+**Rama local creada:** `poo09-preparacion` (sin commit; el usuario la subirá a su repo)
+
+### Asistente y modelo
+
+- **Marca del asistente:** opencode (agente de programación en la terminal).
+- **Modelo exacto de LLM:** `big-pickle` (modelo informado por la herramienta: `opencode/big-pickle`).
+
+### Resumen de prompts
+
+1. Pedí que no se reemplazara el contenido de `BITACORA.md` ni del `README.md`, sino que se agregaran las líneas correspondientes a lo hecho hoy, y que dejara todo preparado antes de la parte grupal.
+2. Pedí crear una rama local nueva para este trabajo.
+3. Reenvié los prompts que circularon en la comisión, como referencia de lo que podía venir: consumir `https://restful-api.dev/` / `https://api.restful-api.dev/objects` con WebClient; agregar OpenAPI y Swagger UI a todos los servicios REST; examinar un OpenAPI ajeno y combinar una regla externa con la lógica propia; configurar el puerto de forma externalizable (referencia de Baeldung); hacer diagramas Mermaid de secuencias, separar el camino feliz de los rechazos y agregar log4j en nivel DEBUG para todos los pasos de integración.
+4. Pedí que, si no había nada que hacer sin los datos del grupo, lo indicara; como sí había infraestructura dependiente sólo de este repo, se implementó completa con stubs temporales para A2 y A3.
+5. Pedí aclarar el alcance: se preparó el escenario cruzado con validadores reemplazables y stubs locales para poder probar hoy el camino feliz y un rechazo por cada compañero.
+
+### Qué aportó la IA y qué hice yo
+
+- La IA agregó springdoc-openapi 3.2.0 y Swagger UI, WebClient, Log4j2, la entidad `Jugada`, el repositorio, el servicio de escenario, los clientes hacia A2/A3, los stubs temporales, el manejo de errores `RECHAZO_A2`, `RECHAZO_A3`, `FALLO_A2` y `FALLO_A3`, la colección de Insomnia y los documentos `docs/POO09-PREPARACION.md` y `docs/POO09-APLICADO.md`.
+- La IA dejó marcados como **PENDIENTE** los datos que todavía no existen: nombres de A2 y A3, URLs de sus OpenAPI, contratos reales de mensajes, estado de la corrección de POO-08 y hash del commit final.
+- Yo elegí crear la rama local `poo09-preparacion`, revisé el alcance con la herramienta de preguntas y voy a subir el trabajo a mi repositorio cuando se complete la parte grupal.
+
+### Verificación realizada
+
+- `./mvnw test`: pasan las 5 pruebas (4 de dominio y la carga del contexto con los nuevos beans).
+- `GET /v3/api-docs`: aparecen CRUD, simulación, integración, escenario y stubs; `GET /swagger-ui.html` disponible.
+- `POST /minecraft/integracion/objeto` con `objetoId=1`: 200 con `Google Pixel 6 Pro`, potencia 10, 2 escudos consumidos y vida 20.
+- Escenario feliz con jugador de 2 escudos y monstruo nuevo, potencia 6: 201 con `jugadaId=1`, `aceptadaPorA2=true` y `aceptadaPorA3=true`; `GET /minecraft/escenarios` muestra la jugada.
+- Rechazo de A2 (jugador sin escudo): 400 con `codigo=RECHAZO_A2` y `SIN_ESCUDO`; la cantidad de jugadas sigue en 1.
+- Rechazo de A3 (potencia 10): 400 con `codigo=RECHAZO_A3` y `POTENCIA_ALTA`; la cantidad de jugadas sigue en 1.
+- Los logs DEBUG muestran los pasos de integración en consola y en `logs/integracion.log`.
+
+### Lo que falta para la entrega final
+
+- Completar el mapa A1/A2/A3 con los compañeros reales.
+- Leer sus OpenAPI y adaptar `ValidacionExternaRequest` y `ValidacionExternaResponse` a esos contratos.
+- Cambiar `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL` y `A3_VALIDATE_PATH`, o dejar documentado qué pasó si un compañero no responde.
+- Definir la situación de POO-08 para los 3 puntos y reemplazar los enlaces al commit final en README y `docs/POO09-APLICADO.md`.

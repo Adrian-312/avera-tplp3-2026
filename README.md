@@ -467,3 +467,90 @@ Checklist de la rúbrica:
 - [x] Jerarquía de excepciones con un handler por tipo.
 - [x] Colección Insomnia con CRUD, simulación y errores.
 - [x] README, bitácora y documento de especificaciones.
+
+---
+
+## 12. POO-09 — Preparación para el challenge de APIs cruzadas
+
+Esta sección se **agrega** a la documentación de POO-08; el contenido anterior queda intacto. La rama local de trabajo es `poo09-preparacion`.
+
+### 12.1 Situación de POO-08 para los 3 puntos
+
+**PENDIENTE de confirmar con el alumno:** completar una de estas opciones antes de entregar.
+
+- Si POO-08 tuvo puntaje completo (24/24): escribir «POO-08 con puntaje completo.»
+- Si hubo observaciones o descuentos: listar cada una y cómo se cerró.
+- Si no hay documento de corrección: escribir «No tengo el documento de corrección»; el servicio de POO-08 está completo (CRUD, simulación y errores de las dos reglas).
+
+No se vuelve a aplicar la rúbrica de 24; sólo se mira este estado para los 3 puntos.
+
+### 12.2 Mapa A1 / A2 / A3
+
+| Rol | Proyecto | Base URL | OpenAPI | Regla en una frase |
+|---|---|---|---|---|
+| **A1** | Adrian-312 / `avera-tplp3-2026` | `http://localhost:8080` | `http://localhost:8080/v3/api-docs` | Onda expansiva y escudos que absorben 5 puntos cada uno. |
+| **A2** | **PENDIENTE** | Stub temporal `http://localhost:8080/integracion/stub/a2` | **PENDIENTE** | Stub: exige al menos 1 escudo en el inventario. |
+| **A3** | **PENDIENTE** | Stub temporal `http://localhost:8080/integracion/stub/a3` | **PENDIENTE** | Stub: exige potencia máxima 8. |
+
+**Escenario:** un Creeper de A1 explota contra un jugador con escudos; la jugada se guarda en el H2 de A1 solamente si A2 acepta los escudos y A3 acepta la potencia. A2 se consulta primero porque revisa el estado previo del jugador.
+
+### 12.3 OpenAPI y Swagger UI
+
+- Documento: `http://localhost:8080/v3/api-docs` (generado con springdoc-openapi 3.2.0).
+- Interfaz: `http://localhost:8080/swagger-ui.html`.
+- Cubre CRUD, simulación, errores `ENTIDAD_INVALIDA` y `ENTIDAD_NO_ENCONTRADA`, integración de prueba y escenario cruzado.
+- El puerto es externalizable: `SERVER_PORT=8081 ./mvnw spring-boot:run`.
+
+### 12.4 URLs externalizables y cómo arrancar los tres servicios
+
+```bash
+# A2 y A3, en los repositorios de los compañeros
+SERVER_PORT=8081 ./mvnw spring-boot:run
+SERVER_PORT=8082 ./mvnw spring-boot:run
+
+# A1, este repositorio
+A2_BASE_URL=http://localhost:8081 A2_VALIDATE_PATH=/ruta-real-de-a2 \
+A3_BASE_URL=http://localhost:8082 A3_VALIDATE_PATH=/ruta-real-de-a3 \
+./mvnw spring-boot:run
+```
+
+Con los stubs no hace falta configurar nada: `./mvnw spring-boot:run` y los dos validadores responden en el mismo puerto. La API pública de prueba se cambia con `DEMO_API_URL` (por defecto `https://api.restful-api.dev`).
+
+### 12.5 Endpoints nuevos
+
+| Método | URL | Qué hace |
+|---|---|---|
+| `POST` | `/minecraft/integracion/objeto` | Consulta la API externa con `WebClient` y aplica sobre el resultado las reglas locales de explosión y escudos. No persiste. |
+| `POST` | `/minecraft/escenarios/explosion-validada` | Consulta A2 y A3; si ambos aceptan, persiste la jugada. Si rechazan, devuelve `RECHAZO_A2` o `RECHAZO_A3` sin tocar la base. |
+| `GET` | `/minecraft/escenarios` | Lista las jugadas guardadas, para verificar el feliz y la ausencia de inserts en los rechazos. |
+| `POST` | `/integracion/stub/a2/validar` | Stub temporal de A2. |
+| `POST` | `/integracion/stub/a3/validar` | Stub temporal de A3. |
+
+Ejemplo feliz (respuesta real obtenida):
+
+```bash
+curl -i -X POST http://localhost:8080/minecraft/escenarios/explosion-validada \
+  -H 'Content-Type: application/json' \
+  -d '{"jugadorId":6,"monstruoId":7,"potencia":6,"motivo":"explosión válida"}'
+# 201 {"jugadaId":1,...,"aceptadaPorA2":true,"aceptadaPorA3":true,"escudosConsumidos":2}
+```
+
+Los rechazos devuelven `400` con `codigo: RECHAZO_A2` o `RECHAZO_A3`; un compañero caído devuelve `502` con `FALLO_A2` o `FALLO_A3`.
+
+### 12.6 Documentación y colección nueva
+
+- Preparación completa del challenge: [`docs/POO09-PREPARACION.md`](docs/POO09-PREPARACION.md) (incluye los diagramas Mermaid del camino feliz y de cada rechazo).
+- Enunciado aplicado a la entrega: [`docs/POO09-APLICADO.md`](docs/POO09-APLICADO.md) (completar nombres, URLs y hash del commit).
+- Colección Insomnia: [`insomnia/poo09-preparacion.json`](insomnia/poo09-preparacion.json), con setup, camino feliz, rechazo por A2, rechazo por A3 y respuestas de ejemplo.
+
+### 12.7 Logging y verificación
+
+Log4j2 registra en nivel DEBUG cada paso de la integración (URL, payload, status, cuerpo, decisión de cada compañero y jugada persistida) en consola y en `logs/integracion.log`.
+
+- `./mvnw test`: pasan las 5 pruebas (4 de dominio + carga del contexto).
+- `GET /v3/api-docs`: expone todas las rutas.
+- `POST /minecraft/integracion/objeto`: 200 con el objeto `Google Pixel 6 Pro` y 2 escudos consumidos.
+- Escenario feliz: 201 y una jugada nueva en `GET /minecraft/escenarios`.
+- Rechazo A2 y rechazo A3: 400 con el autor del rechazo y la misma cantidad de jugadas.
+
+**Enlace al commit de la solución de POO-09:** PENDIENTE de reemplazar por el hash del commit final.
