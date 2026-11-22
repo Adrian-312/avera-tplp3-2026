@@ -60,7 +60,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/",
       "name": "GET / (servicio vivo)",
-      "description": "Esperado: 200 con estado 'Servicio activo' y la lista de endpoints.",
+      "description": "Esperado: 200 con estado 'Servicio activo', autor y dominio.",
       "method": "GET",
       "parameters": [],
       "authentication": {},

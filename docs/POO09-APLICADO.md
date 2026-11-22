@@ -60,7 +60,7 @@ Respuesta `201` cuando A2 y A3 aceptan:
 
 ### `GET /minecraft/escenarios`
 
-Devuelve el historial de jugadas persistidas, ordenado por id descendente. Incluye nombres, potencia, escudos consumidos, vida final, aceptación de A2/A3, motivo y fecha.
+Devuelve el historial de jugadas persistidas. Incluye nombres, potencia, escudos consumidos, vida final, aceptación de A2/A3, motivo y fecha.
 
 ## 4. Contrato enviado a A2 y A3
 

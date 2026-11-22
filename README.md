@@ -893,6 +893,15 @@ A3_BASE_URL='https://a3.example.edu/api' A3_VALIDATE_PATH='/validaciones/potenci
 
 Los rechazos devuelven `400` con `RECHAZO_A2` o `RECHAZO_A3` y no escriben en la base. Un fallo de comunicación devuelve `502` con `FALLO_A2` o `FALLO_A3`. Verificacion: `./mvnw test` → 18 tests, 0 fallos, 0 errores; recorrido HTTP capturado en [`insomnia/respuestas-ejemplo.md`](insomnia/respuestas-ejemplo.md).
 
+### Respuestas a "Qué hay que pensar" (POO-09)
+
+- **OpenAPI:** el documento propio está en <http://localhost:8080/v3/api-docs> (Swagger UI en `/swagger-ui.html`). Describe el CRUD, la simulación, los errores de las dos reglas y el escenario A2/A3 con sus códigos `RECHAZO_*` y `FALLO_*`; un compañero lo puede importar sin abrir el `.java`.
+- **Grupo:** la tabla de arriba muestra A1 (este servicio), A2 (escudos) y A3 (potencia). A2 y A3 siguen **PENDIENTE** hasta que el grupo informe sus nombres, URLs y OpenAPI; las reglas que se consultan son, respectivamente, «el jugador tiene escudos suficientes» y «la potencia está dentro de lo permitido».
+- **Escenario:** un Creeper de A1 explota contra un jugador con escudos. Necesita las dos validaciones ajenas; si ambas aceptan se guarda una `Jugada` y un `GET /minecraft/escenarios` la muestra. Si A2 o A3 rechaza, la base queda igual y el error nombra al compañero.
+- **Cliente:** `ReglaExternaClient` usa `WebClient` y lee las URLs de `application.properties` o de las variables `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL`, `A3_VALIDATE_PATH` y `INTEGRACION_TIMEOUT_SECONDS`. Mientras no estén los OpenAPI reales se usan los stubs locales.
+- **Errores:** el cliente traduce las respuestas de A2 y A3 a la jerarquía propia. `GlobalExceptionHandler` distingue `RECHAZO_A2` de `RECHAZO_A3` (400) y `FALLO_A2` de `FALLO_A3` (502), con `timestamp`, `status`, `codigo`, `mensaje` y `path`.
+- **Límite:** no se clonó código de A2 ni de A3; se trabaja solo con el OpenAPI y las reglas escritas. Si el documento no alcanza, se pide al autor que lo complete (los pendientes están en [`docs/POO09-APLICADO.md`](docs/POO09-APLICADO.md)).
+
 ### Cierre de las observaciones de POO-08
 
 No tengo el documento de corrección. Se cierran una por una las observaciones conocidas de la devolución y la bitácora:
@@ -903,20 +912,20 @@ No tengo el documento de corrección. Se cierran una por una las observaciones c
 4. `PATCH` con `vida: 0`: se rechaza con `400`; no mata a una entidad saltándose las reglas del juego.
 5. `GET /minecraft/acciones` y `GET /minecraft/explosivos`: solo listan entidades vivas.
 6. Concurrencia: `EntidadViva` tiene `@Version` y expone `getVersion()`.
-7. Inventario: `quitarDelInventario` y `consumirItem` ignoran mayúsculas.
+7. Inventario: el consumo de escudos (`SimulacionServiceImpl.consumirItem`) ignora mayúsculas.
 
-## Respuestas a "Qué hay que pensar"
+## Respuestas a "Qué hay que pensar" de POO-08
 
 - **Recurso y verbo:** el sustantivo es `entidades` (`/minecraft/entidades`). La URL nombra el recurso y el verbo HTTP dice la operación; la simulación es su propio recurso (`/minecraft/simulacion/explosion`).
 - **Identidad:** la clave es `id`, un número que asigna la base (`GenerationType.IDENTITY`). El JSON de creación lo omite y la respuesta lo trae.
 - **Herencia y tablas:** usamos `SINGLE_TABLE`: toda la jerarquía vive en `entidad_viva`, con la columna `tipo_entidad` que distingue el subtipo. Elegimos esa estrategia porque las consultas y la simulación recorren todas las entidades a la vez, sin joins, a costa de tener columnas vacías según el tipo. En el JSON el subtipo se distingue con el campo `tipo` (`@JsonTypeInfo` y `@JsonSubTypes` en `EntidadViva`).
 - **Interfaz y repositorio:** `EntidadVivaRepository` es una interface que Spring implementa solo. El controller depende del tipo, no de una clase concreta, así que se podría cambiar H2 por otra base sin tocar los controllers. Es la misma idea que el protocolo `Explosivo` de POO-07: se programa contra un contrato.
 - **Protocolo del dominio:** la interface es `Explosivo` (`poderExplosivo()` y un `sonidoDeExplosion()` por defecto). `GET /minecraft/explosivos` la usa y mezcla instancias de dos familias distintas (`PersonajeJugable` y `Monstruo`).
-- **Ocultamiento:** las reglas numéricas las sostienen las propias clases del dominio (`validarVida`, `validarHambre`, `validarPotencia`, el constructor de `Explosion`). Los constructores sin argumentos que pide JPA son `protected`, no hay setters públicos y JPA accede a los campos directamente. Prueba en Insomnia: el `POST ilegal` devuelve 400 y el `GET` posterior muestra que la colección no cambió.
-- **PUT y PATCH:** `PUT` reemplaza el recurso entero (exige `nombre`; lo omitido vuelve a su valor por defecto). `PATCH` cambia solo los campos enviados y deja el resto como estaba.
+- **Ocultamiento:** las reglas numéricas las validan los services (`validarVida`, `validarHambre` y `validarPotencia` en `EntidadServiceImpl` y `SimulacionServiceImpl`); `Explosion` es solo un record con `origen` y `potencia`. Los constructores sin argumentos que pide JPA son `protected`; hay setters públicos simples, pero el service es el único que los llama y valida antes de mutar. Prueba en Insomnia: el `POST ilegal` devuelve 400 y el `GET` posterior muestra que la colección no cambió.
+- **PUT y PATCH:** `PUT` reemplaza el recurso entero (exige `nombre` y `vida`; los campos omitidos vuelven a su valor por defecto). `PATCH` cambia solo los campos enviados y deja el resto como estaba.
 - **DELETE:** es un borrado físico (`repository.delete`): la fila desaparece y un `GET` posterior devuelve 404. No usa un mensaje especial del dominio.
 - **Dos reglas:** una explosión cambia el estado de más de un objeto a la vez: el monstruo se autodestruye, los jugadores gastan escudos y reciben daño, y animales y plantas reciben el daño completo. El Creeper no se borra: queda con vida 0. El recurso HTTP es `/minecraft/simulacion/explosion` y un `GET` posterior a `/minecraft/entidades` muestra el resultado ya persistido.
-- **Excepciones:** `MinecraftException` es la base y lleva un `codigo`. `EntidadNoEncontradaException` (404) se lanza cuando el recurso no existe; `EntidadInvalidaException` (400) cuando se rompe un invariante o una regla del juego. Son tipos distintos porque el cliente reacciona distinto: "no existe" no es lo mismo que "lo que enviaste es ilegal". Son excepciones **no comprobadas** (`RuntimeException`): el dominio las lanza sin llenar de `throws` cada firma, y Spring revierte la transacción cuando se lanzan. Las lanzan los objetos del juego, no el controller; el controller solo lanza `EntidadNoEncontradaException` cuando el repositorio no encuentra el id. El JSON de error lleva `timestamp`, `status`, `codigo`, `mensaje` y `path`.
+- **Excepciones:** `MinecraftException` es la base y lleva un `codigo`. `EntidadNoEncontradaException` (404) se lanza cuando el recurso no existe; `EntidadInvalidaException` (400) cuando se rompe un invariante o una regla del juego; `EntidadMuertaException` (409) impide revivir una entidad. Son tipos distintos porque el cliente reacciona distinto: "no existe" no es lo mismo que "lo que enviaste es ilegal". Son excepciones **no comprobadas** (`RuntimeException`), las lanzan los services —y el cliente de integración sus propias excepciones—, no el dominio ni los controllers; Spring revierte la transacción cuando se lanzan. `GlobalExceptionHandler` traduce todo al JSON con `timestamp`, `status`, `codigo`, `mensaje` y `path`.
 - **Si cambiamos H2 por otra base:** se toca el `pom.xml` (el driver) y `application.properties` (la URL). Las entidades, el repositorio y los controllers se quedan quietos.
 
 ## Colección de Insomnia
@@ -947,8 +956,8 @@ Importarla como una colección nueva (no reemplaza a la de POO-08). Ejecutar en 
 - `service` / `service.impl`: lógica, validaciones, transacciones y el nuevo `EscenarioService` (A2 → A3 → simulación → persistencia).
 - `integration`: `ReglaExternaClient` y el enum `Companero` para consumir A2 y A3 con `WebClient`.
 - `config`: `OpenApiConfig` (springdoc) y `WebClientConfig` (timeouts).
-- `exception`: jerarquía de excepciones y `GlobalExceptionHandler`, que traduce todo a HTTP (incluye los códigos `RECHAZO_*` y `FALLO_*`).
-- `rest.controller`: controllers HTTP, con `EscenarioController` y los stubs temporales `ValidacionStubController`. `rest.dto`: cuerpos de entrada y salida (incluye `ErrorResponse`).
+- `exception`: jerarquía de excepciones, `ErrorResponse` y `GlobalExceptionHandler`, que traduce todo a HTTP (incluye los códigos `RECHAZO_*` y `FALLO_*`).
+- `rest.controller`: controllers HTTP, con `EscenarioController` y los stubs temporales `ValidacionStubController`. `rest.dto`: cuerpos de entrada y salida.
 
 ## Licencia
 

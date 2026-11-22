@@ -39,7 +39,7 @@ java -jar target/avera-tplp3-2026-0.0.1-SNAPSHOT.jar
 
 ## 3. Comprobar que funciona
 
-Abrí en el navegador <http://localhost:8080/>. Debe mostrar `"estado": "Servicio activo"` y la lista de endpoints.
+Abrí en el navegador <http://localhost:8080/>. Debe mostrar `"estado": "Servicio activo"`. La lista de endpoints está en <http://localhost:8080/v3/api-docs> y en Swagger UI (`/swagger-ui.html`).
 
 Con la base vacía, <http://localhost:8080/minecraft/entidades> devuelve `[]`. Es correcto: todavía no hay nada guardado. Para crear entidades hacen falta pedidos `POST` (ver el punto 5).
 

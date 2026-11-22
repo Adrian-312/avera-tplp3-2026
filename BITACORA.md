@@ -90,6 +90,7 @@ Revisé y probé lo generado: arranqué el servicio, recorrí la colección de I
 - Levantó el servicio con H2 en memoria, recorrió el flujo con `curl` y capturó las respuestas reales para la colección de Insomnia.
 - Dos correcciones durante la verificación: `ReglaExternaClient` dejó de compartir el `WebClient.Builder` entre A2 y A3, y `escudosConsumidos` pasó a informar solo los escudos del jugador del escenario (no el total de todas las entidades).
 - Documentación nueva o actualizada: `README.md`, `RUN.md`, `docs/POO09-APLICADO.md`, `insomnia/poo09-insomnia.json`, `insomnia/README.md` y `insomnia/respuestas-ejemplo.md`. La colección de POO-08 se conservó sin cambios.
+- Auditoría final: se corrigieron textos pre-refactor del README que todavía decían que las reglas y las excepciones vivían en el dominio, se completaron las respuestas de POO-09 a «Qué hay que pensar» y se ajustaron `RUN.md` y `docs/POO09-APLICADO.md` para que coincidan con el código. El código y los tests no se modificaron.
 - No hizo commit: el enlace de entrega quedó como `https://github.com/Adrian-312/avera-tplp3-2026/commit/<HASH_DEL_COMMIT>`.
 
 ### Qué hice yo
