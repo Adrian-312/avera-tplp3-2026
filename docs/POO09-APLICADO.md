@@ -116,8 +116,8 @@ Solo se guarda después de que A2 y A3 aceptan y la simulación termina correcta
 
 - `./mvnw test`: 18 tests, 0 fallos, 0 errores.
 - Nuevos tests del escenario: camino feliz, rechazo de A2, rechazo de A3 y persistencia condicional con un jugador extra.
-- Levantamiento con H2 en memoria y recorrido completo con la colección `insomnia/poo09-insomnia.json`.
-- Respuestas capturadas en `insomnia/respuestas-ejemplo.md`.
+- Levantamiento con H2 en memoria y recorrido completo del escenario desde `/v3/api-docs` (Swagger UI), según el paso 6 de [`RUN.md`](../RUN.md).
+- La colección de Insomnia del repositorio es `insomnia/minecraft-insomnia.json` (POO-08); el escenario de POO-09 se prueba con los endpoints documentados en el OpenAPI propio.
 - IMPORTANTE: el arranque de prueba usa `jdbc:h2:mem:...`; no modifica `./data/minecraft`.
 
 ## 8. Configuración para reemplazar los stubs

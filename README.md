@@ -891,7 +891,7 @@ A3_BASE_URL='https://a3.example.edu/api' A3_VALIDATE_PATH='/validaciones/potenci
 ./mvnw spring-boot:run
 ```
 
-Los rechazos devuelven `400` con `RECHAZO_A2` o `RECHAZO_A3` y no escriben en la base. Un fallo de comunicación devuelve `502` con `FALLO_A2` o `FALLO_A3`. Verificacion: `./mvnw test` → 18 tests, 0 fallos, 0 errores; recorrido HTTP capturado en [`insomnia/respuestas-ejemplo.md`](insomnia/respuestas-ejemplo.md).
+Los rechazos devuelven `400` con `RECHAZO_A2` o `RECHAZO_A3` y no escriben en la base. Un fallo de comunicación devuelve `502` con `FALLO_A2` o `FALLO_A3`. Verificacion: `./mvnw test` → 18 tests, 0 fallos, 0 errores. El escenario se prueba con `POST /minecraft/escenarios/explosion-validada` y `GET /minecraft/escenarios` (OpenAPI en `/v3/api-docs`).
 
 ### Respuestas a "Qué hay que pensar" (POO-09)
 
@@ -930,24 +930,21 @@ No tengo el documento de corrección. Se cierran una por una las observaciones c
 
 ## Colección de Insomnia
 
-Archivo: [`insomnia/minecraft-insomnia.json`](insomnia/minecraft-insomnia.json)
+Archivo: [`insomnia/minecraft-insomnia.json`](insomnia/minecraft-insomnia.json). Guía de importación y orden (también en [`RUN.md`](RUN.md)):
 
 **Importar:** abrí Insomnia, elegí *Import* y luego *From File*, y seleccioná el archivo. Se crea la colección "Minecraft - POO-08" con un entorno (*Base Environment*) que define `base_url` y los ids `jugador_id`, `monstruo_id`, `animal_id` e `id_inexistente`.
 
 **Orden de ejecución** (arrancando con la carpeta `data/` borrada, los ids serán 1, 2 y 3):
 
-1. `00 - Estado`: `GET /`.
-2. `01 - CRUD`: los tres `POST` (jugador, monstruo, animal), luego `GET` de la lista, `GET` por id, `PUT`, `PATCH` y `GET` para ver que el cambio persiste. Si algún id de la respuesta no coincide con el del entorno, corregilo en *Manage Environments*. Si al importar el entorno queda vacío, cargá las variables en *Manage Environments*: apagá *Table View* y pegá el JSON con `base_url` (`http://localhost:8080`), `jugador_id` (1), `monstruo_id` (2), `animal_id` (3) e `id_inexistente` (9999).
-3. `02 - Interface Explosivo`: `GET /minecraft/explosivos`.
-4. `03 - Simulación`: `POST` de la explosión (caso feliz) y después los `GET` que muestran el estado ya persistido.
-5. `04 - Errores`: un pedido por cada excepción (400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA` y 400 `CUERPO_ILEGIBLE`). El orden importa: la carpeta usa al Creeper ya explotado y a la vaca todavía viva.
-6. `05 - DELETE`: borra la vaca y confirma el 404.
+1. `00 - Estado del servicio`: `GET /`.
+2. `01 - CRUD de entidades`: los tres `POST` (jugador, monstruo, animal), luego `GET` de la lista, `GET` por id, `PUT`, `PATCH` y `GET` para ver que el cambio persiste. Si algún id de la respuesta no coincide con el del entorno, corregilo en *Manage Environments*. Si al importar el entorno queda vacío, cargá las variables en *Manage Environments*: apagá *Table View* y pegá el JSON con `base_url` (`http://localhost:8080`), `jugador_id` (1), `monstruo_id` (2), `animal_id` (3) e `id_inexistente` (9999).
+3. `02 - Interface Explosivo`: `GET /minecraft/explosivos` y `GET /minecraft/acciones` con las tres entidades vivas.
+4. `03 - Simulación de explosión`: `POST` de la explosión (caso feliz) y después los `GET` que muestran el estado ya persistido.
+5. `04 - Errores`: un pedido por cada excepción (400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA`, 400 `CUERPO_ILEGIBLE` y 400 al re-explosionar el Creeper muerto). El orden importa: la carpeta usa al Creeper ya explotado y a la vaca todavía viva.
+6. `05 - Entidad muerta (no revive, no actúa)`: regresión del bug corregido. `PATCH` y `PUT` con vida 20 sobre el Creeper devuelven 409 `ENTIDAD_MUERTA` y un `GET` posterior sigue mostrando `vida: 0`; `/acciones` y `/explosivos` ya no listan al muerto; `POST` con vida 0, `PUT` sin vida y `PATCH` con vida 0 devuelven 400.
+7. `06 - DELETE`: borra la vaca y confirma el 404.
 
-### Colección de Insomnia de POO-09
-
-Archivo: [`insomnia/poo09-insomnia.json`](insomnia/poo09-insomnia.json). Guía de importación y orden: [`insomnia/README.md`](insomnia/README.md). Respuestas capturadas: [`insomnia/respuestas-ejemplo.md`](insomnia/respuestas-ejemplo.md).
-
-Importarla como una colección nueva (no reemplaza a la de POO-08). Ejecutar en este orden con base limpia: OpenAPI → setup (ids 1 a 4) → escenario feliz → rechazo de A2 → crear jugador con 1 escudo (id 5) → rechazo de A3 → verificación final. El jugador del rechazo de A3 se crea después del camino feliz porque la onda de A1 consume los escudos de todas las entidades vivas.
+La simulación de POO-09 (A2 → A3 → jugada persistida) se prueba con los endpoints `/minecraft/escenarios/explosion-validada` y `/minecraft/escenarios`, documentados en `/v3/api-docs`.
 
 ## Estructura del proyecto
 

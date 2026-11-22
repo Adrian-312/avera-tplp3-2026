@@ -73,15 +73,16 @@ La base se guarda en la carpeta `data/` (no se sube a Git). Para empezar de cero
    - `01 - CRUD de entidades`: los tres `POST` (201), listar, buscar, `PUT`, `PATCH`.
    - `02 - Interface Explosivo`
    - `03 - Simulación de explosión`: el Creeper queda con vida 0, el jugador pierde un escudo y queda con 15, la vaca queda con 10.
-   - `04 - Errores`: 400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA` y 400 `CUERPO_ILEGIBLE`.
-   - `05 - DELETE`: 204 y luego 404.
+    - `04 - Errores`: 400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA`, 400 `CUERPO_ILEGIBLE` y 400 al re-explosionar el Creeper muerto.
+    - `05 - Entidad muerta (no revive, no actúa)`: 409 `ENTIDAD_MUERTA` al intentar revivir con `PATCH`/`PUT`; el Creeper sigue en vida 0 y desaparece de `/acciones` y `/explosivos`; 400 para `POST` con vida 0, `PUT` sin vida y `PATCH` con vida 0.
+    - `06 - DELETE`: 204 y luego 404.
 
 Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se espera.
 
 ## 6. Probar POO-09 (APIs cruzadas)
 
 1. Con el servicio corriendo, abrí <http://localhost:8080/v3/api-docs> y <http://localhost:8080/swagger-ui.html>. Deben aparecer `POST /minecraft/escenarios/explosion-validada` y `GET /minecraft/escenarios`.
-2. Importá una colección nueva: `insomnia/poo09-insomnia.json` (no reemplaza a la de POO-08). El orden y las variables están en `insomnia/README.md`.
+2. Con una base limpia, creá con `POST /minecraft/entidades` (o Swagger UI): jugador con 2 escudos (id 1), monstruo (id 2), jugador sin escudo (id 3) y otro monstruo para los rechazos (id 4). Después usá **Try it out** en `POST /minecraft/escenarios/explosion-validada`. No reutilices los ids de la colección de POO-08: al terminar esa carpeta el Creeper está muerto y el jugador ya no tiene escudos.
 3. Para probar sin tocar la carpeta `data/`, podés arrancar con H2 en memoria:
 
    ```bash
@@ -92,11 +93,9 @@ Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se esp
    ./mvnw spring-boot:run
    ```
 
-4. Ejecutá las carpetas en orden: OpenAPI → setup → escenario feliz → rechazo de A2 → crear jugador con 1 escudo → rechazo de A3 → verificación final. Resultados esperados: `201`, `400 RECHAZO_A2`, `400 RECHAZO_A3` y un solo elemento en `GET /minecraft/escenarios`.
+4. Probá en este orden: escenario feliz (`jugadorId = 1`, `monstruoId = 2`, `potencia = 6`) → `201`; rechazo de A2 (`jugadorId = 3`, `monstruoId = 4`, `potencia = 6`) → `400 RECHAZO_A2`; crear un jugador con 1 escudo (id 5) y rechazo de A3 (`jugadorId = 5`, `monstruoId = 4`, `potencia = 10`) → `400 RECHAZO_A3`; `GET /minecraft/escenarios` → un solo elemento. El monstruo de los rechazos sigue vivo porque un rechazo no ejecuta la simulación.
 5. En la consola H2 aparece también la tabla `JUGADA` con las jugadas aceptadas.
 6. Los stubs locales se cambian por los compañeros reales con `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL` y `A3_VALIDATE_PATH`. El detalle está en `docs/POO09-APLICADO.md`.
-
-Respuestas capturadas de ejemplo: `insomnia/respuestas-ejemplo.md`.
 
 ## Problemas comunes
 
