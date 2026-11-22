@@ -8,8 +8,11 @@ import org.springframework.web.bind.annotation.RestController;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Monstruo;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.PersonajeJugable;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/minecraft")
+@Tag(name = "Constructores de dominio", description = "Demostraciones de constructores simples y completos; no persisten.")
 public class ConstruccionController {
 
     // Constructor completo: la clase valida y el handler convierte el error.

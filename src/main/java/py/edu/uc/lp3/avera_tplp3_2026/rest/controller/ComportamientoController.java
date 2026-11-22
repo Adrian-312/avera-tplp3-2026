@@ -13,8 +13,11 @@ import py.edu.uc.lp3.avera_tplp3_2026.domain.Explosivo;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Monstruo;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/minecraft")
+@Tag(name = "Comportamiento del dominio", description = "Polimorfismo con el método abstracto y con la interfaz Explosivo.")
 public class ComportamientoController {
 
     private final EntidadVivaRepository repository;

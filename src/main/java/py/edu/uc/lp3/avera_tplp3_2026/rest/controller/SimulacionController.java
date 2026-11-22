@@ -20,8 +20,14 @@ import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ExplosionRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.SimulacionResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/minecraft/simulacion")
+@Tag(name = "Simulación de explosiones", description = "Reglas de POO-08: onda expansiva y escudos de bloque, con estado persistido en H2.")
 public class SimulacionController {
 
     private final EntidadVivaRepository repository;
@@ -31,6 +37,13 @@ public class SimulacionController {
     }
 
     @PostMapping("/explosion")
+    @Operation(summary = "Simular una explosión de Creeper",
+            description = "Valida que el monstruo esté vivo y hostil y que la potencia no supere la suya. Aplica la onda a todas las entidades vivas; cada jugador consume un escudo por cada 5 puntos de daño absorbidos y el resultado queda persistido.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Simulación ejecutada y persistida"),
+            @ApiResponse(responseCode = "400", description = "ENTIDAD_INVALIDA: potencia fuera de rango o entidad no explosiva"),
+            @ApiResponse(responseCode = "404", description = "ENTIDAD_NO_ENCONTRADA: no existe la entidad indicada")
+    })
     @Transactional
     public SimulacionResponse explosion(@RequestBody ExplosionRequest request) {
         if (request == null || request.monstruoId() == null) {

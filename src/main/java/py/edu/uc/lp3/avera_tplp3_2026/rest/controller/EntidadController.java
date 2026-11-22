@@ -26,8 +26,11 @@ import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadNoEncontradaExcept
 import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EntidadRequest;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/minecraft/entidades")
+@Tag(name = "CRUD de entidades", description = "Alta, lectura, reemplazo, actualización parcial y borrado de la familia EntidadViva.")
 public class EntidadController {
 
     private final EntidadVivaRepository repository;

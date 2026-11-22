@@ -6,7 +6,10 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
+@Tag(name = "Salud del servicio", description = "Estado de A1 y lista de recursos disponibles.")
 public class IndexController {
 
     @GetMapping("/")
@@ -24,6 +27,11 @@ public class IndexController {
                         "PATCH /minecraft/entidades/{id}",
                         "DELETE /minecraft/entidades/{id}",
                         "GET /minecraft/explosivos",
-                        "POST /minecraft/simulacion/explosion"));
+                        "POST /minecraft/simulacion/explosion",
+                        "POST /minecraft/integracion/objeto",
+                        "POST /minecraft/escenarios/explosion-validada",
+                        "GET /minecraft/escenarios",
+                        "GET /v3/api-docs",
+                        "GET /swagger-ui.html"));
     }
 }
