@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="PATRON">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40} - %msg%n</Property>
+    </Properties>
+    <Appenders>
+        <Console name="CONSOLA" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PATRON}"/>
+        </Console>
+        <File name="ARCHIVO" fileName="logs/integracion.log" append="true">
+            <PatternLayout pattern="${PATRON}"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Logger name="py.edu.uc.lp3.avera_tplp3_2026.rest.integration" level="DEBUG" additivity="false">
+            <AppenderRef ref="CONSOLA"/>
+            <AppenderRef ref="ARCHIVO"/>
+        </Logger>
+        <Logger name="py.edu.uc.lp3.avera_tplp3_2026.service" level="DEBUG" additivity="false">
+            <AppenderRef ref="CONSOLA"/>
+            <AppenderRef ref="ARCHIVO"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="CONSOLA"/>
+        </Root>
+    </Loggers>
+</Configuration>
