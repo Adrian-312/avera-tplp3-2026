@@ -62,94 +62,179 @@ Errores (JSON con `timestamp`, `status`, `codigo`, `mensaje` y `path`):
 
 ## Diagrama
 
+El diagrama se divide en cuatro capas para que sea legible: dominio, excepciones, servicios con persistencia e integración, y capa REST con DTOs y configuración. Las clases marcadas como `externa` solo anclan las relaciones con otra capa. `+`, `-` y `#` indican visibilidad pública, privada y protegida; `$` marca miembros estáticos y `*` miembros abstractos.
+
+### 1. Dominio (`domain` y `constants`)
+
 ```mermaid
 classDiagram
     direction TB
 
-    class EntidadViva {
-        <<abstract>>
-        -Long id
-        -int vida
-        -String nombre
-        -double altura
-        +realizarAccionEspecial() String
-        +recibirDanio(int)
-        +recibirExplosion(int, String) int
-        +curar(int)
-    }
-    class PersonajeJugable {
-        -int hambre
-        -boolean controlable
-        -List inventario
-        +poderExplosivo() int
-        +recibirExplosion(int, String) int
-    }
-    class PersonajeNoJugable {
-        <<abstract>>
-        +deambular()
-    }
-    class Monstruo {
-        -boolean hostil
-        -int potenciaExplosiva
-        +explotar(int) Explosion
-        +poderExplosivo() int
-    }
-    class Animal {
-        -boolean domable
-        -boolean pacifico
-    }
-    class Planta {
-        -boolean estatico
-    }
     class Explosivo {
         <<interface>>
         +poderExplosivo() int
         +sonidoDeExplosion() String
     }
+
+    class EntidadViva {
+        <<abstract>>
+        -Long id
+        -Long version
+        -int vida
+        -String nombre
+        -double altura
+        -String ultimoOrigenDanio
+        #EntidadViva()
+        #EntidadViva(String nombre)
+        #EntidadViva(int vida, String nombre, double altura)
+        +realizarAccionEspecial() String*
+        +getId() Long
+        +getVersion() Long
+        +getVida() int
+        +setVida(int)
+        +getNombre() String
+        +setNombre(String)
+        +getAltura() double
+        +setAltura(double)
+        +getUltimoOrigenDanio() String
+        +setUltimoOrigenDanio(String)
+        +isVivo() boolean
+        +toString() String
+    }
+
+    class PersonajeJugable {
+        -int hambre
+        -boolean controlable
+        -List~String~ inventario
+        #PersonajeJugable()
+        +PersonajeJugable(String nombre)
+        +PersonajeJugable(int vida, String nombre, double altura, int hambre, boolean controlable)
+        +realizarAccionEspecial() String
+        +poderExplosivo() int
+        +sonidoDeExplosion() String
+        +getHambre() int
+        +setHambre(int)
+        +isControlable() boolean
+        +setControlable(boolean)
+        +getInventario() List~String~
+        +setInventario(List~String~)
+        +toString() String
+    }
+
+    class PersonajeNoJugable {
+        <<abstract>>
+        -boolean noControlable
+        -boolean crecen
+        #PersonajeNoJugable()
+        #PersonajeNoJugable(String nombre)
+        #PersonajeNoJugable(int vida, String nombre, double altura, boolean crecen)
+        +isNoControlable() boolean
+        +isCrecen() boolean
+        +setCrecen(boolean)
+        +deambular()*
+    }
+
+    class Monstruo {
+        -boolean hostil
+        -boolean puedeEstarArmado
+        -int potenciaExplosiva
+        #Monstruo()
+        +Monstruo(String nombre)
+        +Monstruo(int vida, String nombre, double altura, boolean crecen, boolean hostil, boolean puedeEstarArmado)
+        +Monstruo(int vida, String nombre, double altura, boolean crecen, boolean hostil, boolean puedeEstarArmado, int potenciaExplosiva)
+        +realizarAccionEspecial() String
+        +poderExplosivo() int
+        +sonidoDeExplosion() String
+        +deambular()
+        +isHostil() boolean
+        +setHostil(boolean)
+        +isPuedeEstarArmado() boolean
+        +setPuedeEstarArmado(boolean)
+        +getPotenciaExplosiva() int
+        +setPotenciaExplosiva(int)
+    }
+
+    class Animal {
+        -boolean domable
+        -boolean pacifico
+        #Animal()
+        +Animal(String nombre)
+        +Animal(int vida, String nombre, double altura, boolean crecen, boolean domable, boolean pacifico)
+        +realizarAccionEspecial() String
+        +deambular()
+        +isDomable() boolean
+        +setDomable(boolean)
+        +isPacifico() boolean
+        +setPacifico(boolean)
+    }
+
+    class Planta {
+        -boolean estatico
+        #Planta()
+        +Planta(String nombre)
+        +Planta(int vida, String nombre, double altura, boolean crecen)
+        +realizarAccionEspecial() String
+        +deambular()
+        +isEstatico() boolean
+    }
+
     class Explosion {
         <<record>>
         Long origenId
         String origen
         int potencia
+        +Explosion(Long, String, int)
     }
 
-    class JpaRepository {
-        <<interface>>
-    }
-    class EntidadVivaRepository {
-        <<interface>>
-        +findByNombreContainingIgnoreCase(String)
-        +findByVidaGreaterThanEqual(int)
-        +findByNombreContainingIgnoreCaseAndVidaGreaterThanEqual(String, int)
+    class Jugada {
+        -Long id
+        -Long jugadorId
+        -String jugadorNombre
+        -Long monstruoId
+        -String monstruoNombre
+        -int potencia
+        -int escudosConsumidos
+        -int vidaJugadorDespues
+        -boolean aceptadaPorA2
+        -boolean aceptadaPorA3
+        -String motivo
+        -Instant fecha
+        #Jugada()
+        +Jugada(Long, String, Long, String, int, int, int, boolean, boolean, String)
+        +getId() Long
+        +getJugadorId() Long
+        +getJugadorNombre() String
+        +getMonstruoId() Long
+        +getMonstruoNombre() String
+        +getPotencia() int
+        +getEscudosConsumidos() int
+        +getVidaJugadorDespues() int
+        +isAceptadaPorA2() boolean
+        +isAceptadaPorA3() boolean
+        +getMotivo() String
+        +getFecha() Instant
     }
 
-    class EntidadController {
-        +crear() +listar() +buscar()
-        +reemplazar() +actualizar() +eliminar()
-    }
-    class SimulacionController {
-        +explosion()
-    }
-    class ComportamientoController {
-        +obtenerAcciones()
-        +obtenerExplosivos()
-    }
-
-    class RuntimeException
-    class MinecraftException {
-        -String codigo
-        +getCodigo() String
-    }
-    class EntidadNoEncontradaException
-    class EntidadInvalidaException
-    class GlobalExceptionHandler
-    class ErrorResponse {
-        <<record>>
-        String timestamp
-        int status
-        String codigo
-        String mensaje
-        String path
+    class MinecraftConstants {
+        <<final>>
+        +int VIDA_MAXIMA$
+        +double ALTURA_MAXIMA$
+        +double ALTURA_DEFECTO$
+        +double ALTURA_JUGADOR_DEFECTO$
+        +String ORIGEN_DANIO_NINGUNO$
+        +int HAMBRE_MAXIMA$
+        +int ESCUDO_ABSORCION$
+        +int PODER_EXPLOSIVO_POR_TNT$
+        +String ITEM_ESCUDO$
+        +String ITEM_TNT$
+        +int POTENCIA_EXPLOSIVA_CREEPER$
+        +int POTENCIA_EXPLOSIVA_MAXIMA$
+        +String TIPO_JUGADOR$
+        +String TIPO_MONSTRUO$
+        +String TIPO_ANIMAL$
+        +String TIPO_PLANTA$
+        +String TIPO_NO_JUGABLE$
+        -MinecraftConstants()
     }
 
     EntidadViva <|-- PersonajeJugable
@@ -160,43 +245,607 @@ classDiagram
 
     Explosivo <|.. PersonajeJugable
     Explosivo <|.. Monstruo
-    Monstruo ..> Explosion : crea
 
-    JpaRepository <|-- EntidadVivaRepository
-    EntidadVivaRepository ..> EntidadViva : persiste
-    EntidadController ..> EntidadVivaRepository : usa
-    SimulacionController ..> EntidadVivaRepository : usa
-    SimulacionController ..> Monstruo : dispara explotar
-    SimulacionController ..> Explosion : lee la potencia
-    ComportamientoController ..> EntidadVivaRepository : usa
-    ComportamientoController ..> Explosivo : lee
+    EntidadViva ..> MinecraftConstants : vida y altura por defecto
+    PersonajeJugable ..> MinecraftConstants : hambre, TNT y altura
+    Monstruo ..> MinecraftConstants : potencia del Creeper
+```
+
+### 2. Excepciones y manejo de errores (`exception`)
+
+```mermaid
+classDiagram
+    direction TB
+
+    class RuntimeException {
+        <<java.lang>>
+    }
+
+    class IllegalArgumentException {
+        <<java.lang>>
+    }
+
+    class MethodArgumentTypeMismatchException {
+        <<spring>>
+    }
+
+    class HttpMessageNotReadableException {
+        <<spring>>
+    }
+
+    class MinecraftException {
+        -String codigo
+        #MinecraftException(String codigo, String mensaje)
+        #MinecraftException(String codigo, String mensaje, Throwable causa)
+        +getCodigo() String
+    }
+
+    class EntidadNoEncontradaException {
+        +EntidadNoEncontradaException(String mensaje)
+    }
+
+    class EntidadInvalidaException {
+        +EntidadInvalidaException(String mensaje)
+    }
+
+    class EntidadMuertaException {
+        +EntidadMuertaException(String mensaje)
+    }
+
+    class IntegracionExternaException {
+        -String companero
+        +IntegracionExternaException(String companero, String mensaje)
+        +getCompanero() String
+    }
+
+    class RechazoExternoException {
+        -int statusExterno
+        -String codigoExterno
+        +RechazoExternoException(String companero, int statusExterno, String codigoExterno, String motivo)
+        +getStatusExterno() int
+        +getCodigoExterno() String
+    }
+
+    class GlobalExceptionHandler {
+        <<RestControllerAdvice>>
+        +handleNoEncontrada(EntidadNoEncontradaException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleInvalida(EntidadInvalidaException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleMuerta(EntidadMuertaException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleRechazoExterno(RechazoExternoException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleFalloExterno(IntegracionExternaException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleBase(MinecraftException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleIllegalArgument(IllegalArgumentException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleTipoInvalido(MethodArgumentTypeMismatchException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        +handleJsonIlegible(HttpMessageNotReadableException, HttpServletRequest) ResponseEntity~ErrorResponse~
+        -respuesta(HttpStatus, MinecraftException, HttpServletRequest) ResponseEntity~ErrorResponse~
+    }
+
+    class ErrorResponse {
+        <<record>>
+        String timestamp
+        int status
+        String codigo
+        String mensaje
+        String path
+    }
 
     RuntimeException <|-- MinecraftException
+    RuntimeException <|-- IntegracionExternaException
     MinecraftException <|-- EntidadNoEncontradaException
     MinecraftException <|-- EntidadInvalidaException
-    EntidadViva ..> EntidadInvalidaException : lanza
-    Monstruo ..> EntidadInvalidaException : lanza
-    EntidadController ..> EntidadNoEncontradaException : lanza
-    SimulacionController ..> EntidadNoEncontradaException : lanza
+    MinecraftException <|-- EntidadMuertaException
+    IntegracionExternaException <|-- RechazoExternoException
+
     GlobalExceptionHandler ..> MinecraftException : traduce a HTTP
+    GlobalExceptionHandler ..> EntidadNoEncontradaException : 404 ENTIDAD_NO_ENCONTRADA
+    GlobalExceptionHandler ..> EntidadInvalidaException : 400 ENTIDAD_INVALIDA
+    GlobalExceptionHandler ..> EntidadMuertaException : 409 ENTIDAD_MUERTA
+    GlobalExceptionHandler ..> RechazoExternoException : 400 RECHAZO_*
+    GlobalExceptionHandler ..> IntegracionExternaException : 502 FALLO_*
+    GlobalExceptionHandler ..> IllegalArgumentException : 400 ARGUMENTO_INVALIDO
+    GlobalExceptionHandler ..> MethodArgumentTypeMismatchException : 400 PARAMETRO_INVALIDO
+    GlobalExceptionHandler ..> HttpMessageNotReadableException : 400 CUERPO_ILEGIBLE
     GlobalExceptionHandler ..> ErrorResponse : devuelve
 ```
 
-- **Herencia** (`<|--`): `PersonajeJugable` y `PersonajeNoJugable` son entidades vivas; `Monstruo`, `Animal` y `Planta` son personajes no jugables.
-- **Implementación de interface** (`<|..`): `PersonajeJugable` y `Monstruo`, de familias distintas, implementan `Explosivo`.
-- **Uso del repositorio** (`..>`): los tres controllers hablan con la interface `EntidadVivaRepository`, nunca con una implementación.
-- **Jerarquía de excepciones**: `MinecraftException` es la base; las dos hijas son `EntidadNoEncontradaException` y `EntidadInvalidaException`.
+### 3. Servicios, repositorios e integración (`service`, `service.impl`, `repository`, `integration`)
 
-Las tres clases persistidas que participan en la simulación son `EntidadViva` (padre), `PersonajeJugable` y `Monstruo` (hijas). `Animal` y `Planta` también se guardan en la misma tabla.
+```mermaid
+classDiagram
+    direction LR
+
+    class JpaRepository {
+        <<interface>>
+    }
+    class EntidadVivaRepository {
+        <<interface>>
+        +findByNombreContainingIgnoreCase(String) List~EntidadViva~
+        +findByVidaGreaterThanEqual(int) List~EntidadViva~
+        +findByNombreContainingIgnoreCaseAndVidaGreaterThanEqual(String, int) List~EntidadViva~
+    }
+    class JugadaRepository {
+        <<interface>>
+    }
+
+    class EntidadService {
+        <<interface>>
+        +crear(EntidadRequest) EntidadViva
+        +listar(String, Integer) List~EntidadViva~
+        +buscar(Long) EntidadViva
+        +reemplazar(Long, EntidadRequest) EntidadViva
+        +actualizar(Long, EntidadRequest) EntidadViva
+        +eliminar(Long)
+    }
+    class SimulacionService {
+        <<interface>>
+        +simularExplosion(Long, Integer) SimulacionResponse
+    }
+    class ComportamientoService {
+        <<interface>>
+        +obtenerAcciones() List~Map~String, String~~
+        +obtenerExplosivos() List~Map~String, Object~~
+    }
+    class EscenarioService {
+        <<interface>>
+        +ejecutar(EscenarioRequest) EscenarioResponse
+        +listar() List~Jugada~
+    }
+
+    class EntidadServiceImpl {
+        <<Service>>
+        -EntidadVivaRepository repository
+        +EntidadServiceImpl(EntidadVivaRepository)
+        +crear(EntidadRequest) EntidadViva
+        +listar(String, Integer) List~EntidadViva~
+        +buscar(Long) EntidadViva
+        +reemplazar(Long, EntidadRequest) EntidadViva
+        +actualizar(Long, EntidadRequest) EntidadViva
+        +eliminar(Long)
+        -obtener(Long) EntidadViva
+        -construir(EntidadRequest) EntidadViva
+        -rechazarSiEstaMuerta(EntidadViva)
+        -aplicarCambios(EntidadViva, EntidadRequest, boolean)
+        -cambiarJugador(PersonajeJugable, EntidadRequest, boolean)
+        -cambiarMonstruo(Monstruo, EntidadRequest, boolean)
+        -cambiarAnimal(Animal, EntidadRequest, boolean)
+        -cambiarPlanta(Planta, EntidadRequest, boolean)
+        -actualizarPerfil(EntidadViva, String, double)
+        -actualizarVida(EntidadViva, int)
+        -validarBase(String, int, double)
+        -validarNombre(String)
+        -validarVida(int)
+        -validarAltura(double)
+        -validarHambre(int)
+        -validarPotencia(int)
+        -normalizarInventario(List~String~) List~String~
+        -normalizarTipo(String) String
+        -tipoDe(EntidadViva) String
+        -alturaPorDefecto(EntidadViva) double
+    }
+
+    class SimulacionServiceImpl {
+        <<Service>>
+        -EntidadVivaRepository repository
+        +SimulacionServiceImpl(EntidadVivaRepository)
+        +simularExplosion(Long, Integer) SimulacionResponse
+        -explotar(Monstruo, int) Explosion
+        -validarExplosion(String, int)
+        -recibirExplosion(EntidadViva, int, String) int
+        -consumirItem(PersonajeJugable, String) boolean
+        -aplicarDanio(EntidadViva, int, String)
+    }
+
+    class ComportamientoServiceImpl {
+        <<Service>>
+        -EntidadVivaRepository repository
+        +ComportamientoServiceImpl(EntidadVivaRepository)
+        +obtenerAcciones() List~Map~String, String~~
+        +obtenerExplosivos() List~Map~String, Object~~
+    }
+
+    class EscenarioServiceImpl {
+        <<Service>>
+        -EntidadVivaRepository entidadRepository
+        -JugadaRepository jugadaRepository
+        -SimulacionService simulacionService
+        -ReglaExternaClient reglaExternaClient
+        +EscenarioServiceImpl(EntidadVivaRepository, JugadaRepository, SimulacionService, ReglaExternaClient)
+        +ejecutar(EscenarioRequest) EscenarioResponse
+        +listar() List~Jugada~
+    }
+
+    class Companero {
+        <<enumeration>>
+        A2
+        A3
+    }
+
+    class ReglaExternaClient {
+        <<Component>>
+        -Map~Companero, WebClient~ clientes
+        -Map~Companero, String~ baseUrls
+        -Map~Companero, String~ rutas
+        -Duration timeout
+        -ObjectMapper objectMapper
+        +ReglaExternaClient(WebClient~Builder~, ObjectMapper, String, String, String, String, long)
+        +validar(Companero, ValidacionExternaRequest) ValidacionExternaResponse
+        -textoDe(String, String...) String
+        -valorTexto(JsonNode, String...) String
+    }
+
+    class RespuestaCruda {
+        <<record anidado en ReglaExternaClient>>
+        int status
+        String cuerpo
+        +RespuestaCruda(int, String)
+    }
+
+    class EntidadViva {
+        <<externa: domain>>
+    }
+    class PersonajeJugable {
+        <<externa: domain>>
+    }
+    class Monstruo {
+        <<externa: domain>>
+    }
+    class Animal {
+        <<externa: domain>>
+    }
+    class Planta {
+        <<externa: domain>>
+    }
+    class Explosion {
+        <<externa: domain>>
+    }
+    class Explosivo {
+        <<externa: domain>>
+    }
+    class Jugada {
+        <<externa: domain>>
+    }
+    class EntidadRequest {
+        <<externa: rest.dto>>
+    }
+    class EscenarioRequest {
+        <<externa: rest.dto>>
+    }
+    class EscenarioResponse {
+        <<externa: rest.dto>>
+    }
+    class SimulacionResponse {
+        <<externa: rest.dto>>
+    }
+    class ValidacionExternaRequest {
+        <<externa: rest.dto>>
+    }
+    class ValidacionExternaResponse {
+        <<externa: rest.dto>>
+    }
+    class EntidadInvalidaException {
+        <<externa: exception>>
+    }
+    class EntidadNoEncontradaException {
+        <<externa: exception>>
+    }
+    class EntidadMuertaException {
+        <<externa: exception>>
+    }
+    class RechazoExternoException {
+        <<externa: exception>>
+    }
+    class IntegracionExternaException {
+        <<externa: exception>>
+    }
+
+    JpaRepository <|-- EntidadVivaRepository
+    JpaRepository <|-- JugadaRepository
+    EntidadVivaRepository ..> EntidadViva : persiste
+    JugadaRepository ..> Jugada : persiste
+
+    EntidadService <|.. EntidadServiceImpl
+    SimulacionService <|.. SimulacionServiceImpl
+    ComportamientoService <|.. ComportamientoServiceImpl
+    EscenarioService <|.. EscenarioServiceImpl
+
+    EntidadServiceImpl --> EntidadVivaRepository
+    SimulacionServiceImpl --> EntidadVivaRepository
+    ComportamientoServiceImpl --> EntidadVivaRepository
+    EscenarioServiceImpl --> EntidadVivaRepository
+    EscenarioServiceImpl --> JugadaRepository
+    EscenarioServiceImpl --> SimulacionService
+    EscenarioServiceImpl --> ReglaExternaClient
+    ReglaExternaClient --> Companero : claves de los mapas
+    ReglaExternaClient *-- RespuestaCruda : crea
+
+    EntidadServiceImpl ..> EntidadRequest : recibe
+    EntidadServiceImpl ..> PersonajeJugable : construye
+    EntidadServiceImpl ..> Monstruo : construye
+    EntidadServiceImpl ..> Animal : construye
+    EntidadServiceImpl ..> Planta : construye
+    EntidadServiceImpl ..> EntidadInvalidaException : lanza
+    EntidadServiceImpl ..> EntidadNoEncontradaException : lanza
+    EntidadServiceImpl ..> EntidadMuertaException : lanza
+
+    SimulacionServiceImpl ..> Explosion : crea
+    SimulacionServiceImpl ..> SimulacionResponse : devuelve
+    SimulacionServiceImpl ..> EntidadInvalidaException : lanza
+    SimulacionServiceImpl ..> EntidadNoEncontradaException : lanza
+
+    ComportamientoServiceImpl ..> EntidadViva : llama realizarAccionEspecial
+    ComportamientoServiceImpl ..> Explosivo : lee
+
+    EscenarioServiceImpl ..> EscenarioRequest : recibe
+    EscenarioServiceImpl ..> EscenarioResponse : devuelve
+    EscenarioServiceImpl ..> Jugada : guarda
+    EscenarioServiceImpl ..> RechazoExternoException : lanza
+    ReglaExternaClient ..> ValidacionExternaRequest : envía
+    ReglaExternaClient ..> ValidacionExternaResponse : devuelve
+    ReglaExternaClient ..> RechazoExternoException : lanza
+    ReglaExternaClient ..> IntegracionExternaException : lanza
+```
+
+### 4. REST, DTOs y configuración (`rest.controller`, `rest.dto`, `config`, `constants`)
+
+```mermaid
+classDiagram
+    direction LR
+
+    class EntidadController {
+        <<RestController>>
+        -EntidadService service
+        +EntidadController(EntidadService)
+        +crear(EntidadRequest) ResponseEntity~EntidadViva~
+        +listar(String, Integer) List~EntidadViva~
+        +buscar(Long) EntidadViva
+        +reemplazar(Long, EntidadRequest) EntidadViva
+        +actualizar(Long, EntidadRequest) EntidadViva
+        +eliminar(Long) ResponseEntity~Void~
+    }
+    class SimulacionController {
+        <<RestController>>
+        -SimulacionService service
+        +SimulacionController(SimulacionService)
+        +explosion(ExplosionRequest) SimulacionResponse
+    }
+    class ComportamientoController {
+        <<RestController>>
+        -ComportamientoService service
+        +ComportamientoController(ComportamientoService)
+        +obtenerAcciones() List~Map~String, String~~
+        +obtenerExplosivos() List~Map~String, Object~~
+    }
+    class IndexController {
+        <<RestController>>
+        +index() Map~String, Object~
+    }
+    class EscenarioController {
+        <<RestController>>
+        -EscenarioService escenarioService
+        +EscenarioController(EscenarioService)
+        +explosionValidada(EscenarioRequest) ResponseEntity~EscenarioResponse~
+        +listar() List~Jugada~
+    }
+    class ValidacionStubController {
+        <<RestController>>
+        -int escudosMinimos
+        -int potenciaMaxima
+        +ValidacionStubController(int, int)
+        +validarA2(ValidacionExternaRequest) ValidacionExternaResponse
+        +validarA3(ValidacionExternaRequest) ValidacionExternaResponse
+    }
+
+    class EntidadRequest {
+        -String tipo
+        -String nombre
+        -Integer vida
+        -Double altura
+        -Integer hambre
+        -Boolean controlable
+        -Boolean hostil
+        -Boolean puedeEstarArmado
+        -Boolean domable
+        -Boolean pacifico
+        -Boolean crecen
+        -Integer potenciaExplosiva
+        -List~String~ inventario
+        +getTipo() String
+        +setTipo(String)
+        +getNombre() String
+        +setNombre(String)
+        +getVida() Integer
+        +setVida(Integer)
+        +getAltura() Double
+        +setAltura(Double)
+        +getHambre() Integer
+        +setHambre(Integer)
+        +getControlable() Boolean
+        +setControlable(Boolean)
+        +getHostil() Boolean
+        +setHostil(Boolean)
+        +getPuedeEstarArmado() Boolean
+        +setPuedeEstarArmado(Boolean)
+        +getDomable() Boolean
+        +setDomable(Boolean)
+        +getPacifico() Boolean
+        +setPacifico(Boolean)
+        +getCrecen() Boolean
+        +setCrecen(Boolean)
+        +getPotenciaExplosiva() Integer
+        +setPotenciaExplosiva(Integer)
+        +getInventario() List~String~
+        +setInventario(List~String~)
+    }
+    class ExplosionRequest {
+        <<record>>
+        Long monstruoId
+        Integer potencia
+        +ExplosionRequest(Long, Integer)
+    }
+    class SimulacionResponse {
+        <<record>>
+        Long monstruoId
+        String monstruo
+        int potencia
+        int escudosConsumidos
+        String sonido
+        List~ResultadoEntidad~ afectadas
+        +SimulacionResponse(Long, String, int, int, String, List~ResultadoEntidad~)
+    }
+    class ResultadoEntidad {
+        <<record anidado en SimulacionResponse>>
+        Long id
+        String nombre
+        String tipo
+        int vidaAntes
+        int vidaDespues
+        int escudosConsumidos
+        boolean vivo
+        +ResultadoEntidad(Long, String, String, int, int, int, boolean)
+    }
+    class EscenarioRequest {
+        <<record>>
+        Long jugadorId
+        Long monstruoId
+        int potencia
+        String motivo
+        +EscenarioRequest(Long, Long, int, String)
+    }
+    class EscenarioResponse {
+        <<record>>
+        Long jugadaId
+        Long jugadorId
+        Long monstruoId
+        int potencia
+        boolean aceptadaPorA2
+        boolean aceptadaPorA3
+        int escudosConsumidos
+        int vidaJugadorDespues
+        String detalle
+        +EscenarioResponse(Long, Long, Long, int, boolean, boolean, int, int, String)
+    }
+    class ValidacionExternaRequest {
+        <<record>>
+        String jugador
+        int vidaJugador
+        int escudosDisponibles
+        String monstruo
+        int potencia
+        String escenario
+        +ValidacionExternaRequest(String, int, int, String, int, String)
+    }
+    class ValidacionExternaResponse {
+        <<record>>
+        boolean aceptada
+        String motivo
+        String codigo
+        +ValidacionExternaResponse(boolean, String, String)
+    }
+
+    class OpenApiConfig {
+        <<Configuration>>
+        -String puerto
+        +openAPI() OpenAPI
+    }
+    class WebClientConfig {
+        <<Configuration>>
+        +webClientBuilder() WebClient~Builder~
+    }
+    class ApiPaths {
+        <<final>>
+        +String ESCENARIO$
+        +String STUB$
+        +String API_DOCS$
+        +String SWAGGER_UI$
+        -ApiPaths()
+    }
+    class Contacto {
+        <<final>>
+        +String A1$
+        +String GITHUB$
+        -Contacto()
+    }
+    class AveraTplp32026Application {
+        <<SpringBootApplication>>
+        +main(String[])$
+    }
+
+    class EntidadService {
+        <<externa: service>>
+    }
+    class SimulacionService {
+        <<externa: service>>
+    }
+    class ComportamientoService {
+        <<externa: service>>
+    }
+    class EscenarioService {
+        <<externa: service>>
+    }
+    class ReglaExternaClient {
+        <<externa: integration>>
+    }
+    class EntidadViva {
+        <<externa: domain>>
+    }
+    class Jugada {
+        <<externa: domain>>
+    }
+    class Explosivo {
+        <<externa: domain>>
+    }
+
+    EntidadController --> EntidadService
+    SimulacionController --> SimulacionService
+    ComportamientoController --> ComportamientoService
+    EscenarioController --> EscenarioService
+
+    EntidadController ..> EntidadRequest : recibe
+    EntidadController ..> EntidadViva : devuelve
+    SimulacionController ..> ExplosionRequest : recibe
+    SimulacionController ..> SimulacionResponse : devuelve
+    SimulacionResponse *-- ResultadoEntidad : afectadas
+    ComportamientoController ..> EntidadViva : llama realizarAccionEspecial
+    ComportamientoController ..> Explosivo : lee
+    EscenarioController ..> EscenarioRequest : recibe
+    EscenarioController ..> EscenarioResponse : devuelve
+    EscenarioController ..> Jugada : lista
+    EscenarioController ..> ApiPaths : mapea
+    ValidacionStubController ..> ApiPaths : mapea
+    ValidacionStubController ..> ValidacionExternaRequest : recibe
+    ValidacionStubController ..> ValidacionExternaResponse : devuelve
+
+    WebClientConfig ..> ReglaExternaClient : provee WebClient~Builder~
+    OpenApiConfig ..> ApiPaths : lee
+    OpenApiConfig ..> Contacto : lee
+```
+
+- **Herencia** (`<|--`): `PersonajeJugable` y `PersonajeNoJugable` son entidades vivas; `Monstruo`, `Animal` y `Planta` son personajes no jugables. Las excepciones forman dos ramas: `MinecraftException` y `IntegracionExternaException`, ambas hijas de `RuntimeException`.
+- **Implementación de interface** (`<|..`): `PersonajeJugable` y `Monstruo`, de familias distintas, implementan `Explosivo`. Los cuatro services siguen el mismo patrón con sus implementaciones, y los dos repositorios extienden `JpaRepository`.
+- **Composición** (`*--`): `SimulacionResponse` contiene su record anidado `ResultadoEntidad`, y `ReglaExternaClient` crea su record interno `RespuestaCruda`.
+- **Uso de interfaces** (`..>`): los controllers solo conocen la interface de service; los services solo conocen la interface de repositorio. `EscenarioServiceImpl` además coordina a `SimulacionService` y `ReglaExternaClient`, sin importar implementaciones concretas.
+- **Ocultamiento:** `EntidadViva` y sus hijas son estado y comportamiento polimórfico; las validaciones, las dos reglas del juego y las excepciones viven en `service.impl`. Los constructores sin argumentos que pide JPA son `protected` y las constantes están centralizadas en `MinecraftConstants`.
+- **Excepciones:** `GlobalExceptionHandler` traduce cada excepción a un `ErrorResponse` con `timestamp`, `status`, `codigo`, `mensaje` y `path`. Todas son no comprobadas (`RuntimeException`), de modo que lanzarlas revierte la transacción.
+
+Las entidades persistidas son `EntidadViva` (padre) y sus hijas —`PersonajeJugable`, `Monstruo`, `Animal` y `Planta`— en la tabla `entidad_viva` (herencia `SINGLE_TABLE`), más `Jugada` en la tabla `jugada`. La simulación recorre a todas las entidades; el escenario validado por A2 y A3 parte de un `PersonajeJugable` y un `Monstruo` y guarda el resultado como `Jugada`.
 
 ## Las dos reglas del juego
 
-1. **Monstruo explosivo** (`Monstruo.explotar`): un monstruo hostil y vivo explota con una potencia entre 1 y su máximo y se autodestruye (su vida llega a 0).
-2. **Escudos del jugador** (`PersonajeJugable.recibirExplosion`): cada escudo del inventario absorbe 5 puntos de la onda expansiva y se consume.
+1. **Monstruo explosivo** (`SimulacionServiceImpl.explotar`): un monstruo hostil y vivo explota con una potencia entre 1 y su máximo y se autodestruye (su vida llega a 0).
+2. **Escudos del jugador** (`SimulacionServiceImpl.recibirExplosion`): cada escudo del inventario absorbe 5 puntos de la onda expansiva y se consume.
+
+El dominio (`EntidadViva` y sus hijas) guarda el estado y expone el comportamiento polimórfico; las reglas las ejecuta `service.impl`, que valida los datos, lanza las excepciones y rodea la operación con `@Transactional`. Así un pedido HTTP no puede dejar una entidad en un estado imposible.
 
 `POST /minecraft/simulacion/explosion` aplica la explosión a todas las entidades guardadas (jugadores, monstruos, animales y plantas) y persiste las nuevas vidas y los escudos consumidos.
 
 **Qué pasa con el Creeper:** "autodestruirse" significa quedar con `vida: 0` y `vivo: false`, no desaparecer de la base. La fila sigue guardada y aparece en el listado, y sirve de prueba: una segunda explosión con el mismo Creeper devuelve 400 porque "ya no está vivo". Borrar una entidad es otra operación, `DELETE`.
+
+## Sobrecarga y sobreescritura
+
+- **Sobrecarga** (*overload*): mismo nombre de método, distinta lista de parámetros. Se resuelve al compilar. En el dominio se ve sobre todo en los constructores: `EntidadViva()` (protegido, para JPA), `EntidadViva(String nombre)` y `EntidadViva(int vida, String nombre, double altura)`; lo mismo repiten `PersonajeJugable`, `PersonajeNoJugable`, `Monstruo` (que agrega una firma con `potenciaExplosiva`), `Animal`, `Planta` y `Jugada`. Cada firma deja el objeto en un estado legal.
+- **Sobreescritura** (*override*): misma firma en la clase hija, con implementación propia. Se resuelve en tiempo de ejecución y es la base del polimorfismo. `EntidadViva` declara abstracto `realizarAccionEspecial()` y las cuatro clases concretas (`PersonajeJugable`, `Monstruo`, `Animal`, `Planta`) lo implementan cada una a su manera; `PersonajeNoJugable` declara abstracto `deambular()` y lo sobreescriben `Monstruo`, `Animal` y `Planta`. `EntidadViva` y `PersonajeJugable` también reemplazan `toString()`.
+- **Interface y implementación:** `sonidoDeExplosion()` tiene una implementación por defecto en `Explosivo` y tanto `PersonajeJugable` como `Monstruo` la reemplazan; `poderExplosivo()` se implementa en esas dos familias distintas. `GET /minecraft/acciones` recorre `EntidadViva` y `GET /minecraft/explosivos` recorre `Explosivo`: en ambos casos llega el comportamiento del subtipo concreto.
+- **En la capa service:** las cuatro implementaciones (`EntidadServiceImpl`, `SimulacionServiceImpl`, `ComportamientoServiceImpl`, `EscenarioServiceImpl`) sobreescriben con `@Override` los métodos declarados en sus respectivas interfaces de `service`.
 
 ## Invariantes
 
