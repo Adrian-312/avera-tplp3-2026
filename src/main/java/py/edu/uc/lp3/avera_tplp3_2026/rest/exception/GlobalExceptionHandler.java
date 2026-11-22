@@ -13,6 +13,8 @@ import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadInvalidaException;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.EntidadNoEncontradaException;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.exception.MinecraftException;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ErrorResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.integration.IntegracionExternaException;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.integration.RechazoExternoException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -33,6 +35,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBase(MinecraftException ex,
                                                     HttpServletRequest request) {
         return respuesta(HttpStatus.BAD_REQUEST, ex, request);
+    }
+
+    @ExceptionHandler(RechazoExternoException.class)
+    public ResponseEntity<ErrorResponse> handleRechazoExterno(RechazoExternoException ex,
+                                                               HttpServletRequest request) {
+        ErrorResponse body = new ErrorResponse(
+                Instant.now().toString(),
+                HttpStatus.BAD_REQUEST.value(),
+                "RECHAZO_" + ex.getCompanero(),
+                ex.getMessage() + " (código externo " + ex.getCodigoExterno() + ")",
+                request.getRequestURI());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(IntegracionExternaException.class)
+    public ResponseEntity<ErrorResponse> handleFalloIntegracion(IntegracionExternaException ex,
+                                                                 HttpServletRequest request) {
+        ErrorResponse body = new ErrorResponse(
+                Instant.now().toString(),
+                HttpStatus.BAD_GATEWAY.value(),
+                "FALLO_" + ex.getCompanero(),
+                ex.getMessage(),
+                request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
