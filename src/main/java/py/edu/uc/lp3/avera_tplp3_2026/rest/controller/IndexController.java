@@ -13,7 +13,7 @@ public class IndexController {
     public Map<String, Object> index() {
         return Map.of(
                 "estado", "Servicio activo",
-                "autor", "Adrian",
+                "autor", "Adrian Vera",
                 "dominio", "Minecraft");
     }
 }

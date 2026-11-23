@@ -17,6 +17,7 @@ import py.edu.uc.lp3.avera_tplp3_2026.domain.Monstruo;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.PersonajeJugable;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadInvalidaException;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadNoEncontradaException;
+import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadMuertaException;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.SimulacionResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.service.SimulacionService;
@@ -93,7 +94,7 @@ public class SimulacionServiceImpl implements SimulacionService {
     // una explosión con la potencia indicada.
     private Explosion explotar(Monstruo monstruo, int potencia) {
         if (!monstruo.isVivo()) {
-            throw new EntidadInvalidaException(
+            throw new EntidadMuertaException(
                     "El monstruo " + monstruo.getNombre() + " ya no está vivo y no puede explotar");
         }
         if (!monstruo.isHostil()) {
