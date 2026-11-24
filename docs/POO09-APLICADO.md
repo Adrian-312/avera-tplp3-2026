@@ -29,7 +29,7 @@ Un **Creeper de A1** explota contra un jugador que lleva escudos. Antes de aplic
 
 El orden de consulta es A2 → A3. Si A2 rechaza, no se consulta A3. Cualquier rechazo ocurre antes de escribir, por lo que no se crea ninguna jugada. Si la simulación local falla, la transacción `@Transactional` hace rollback de la jugada.
 
-Además del escenario cruzado, A1 publica dos reglas de juego propias: **daño por caída** (los primeros 3 bloques no hacen daño; desde el cuarto, 1 punto por bloque) y **absorción de escudos** (cada escudo absorbe 5 puntos). Ambas devuelven el mismo formato `VeredictoRegla` y rechazan con `400 REGLA_RECHAZADA` cuando el daño declarado no coincide con el calculado.
+Además del escenario cruzado, A1 publica dos reglas de juego propias: **condición previa** (jugador y monstruo existen, son `PersonajeJugable` y `Monstruo` y están vivos antes de la explosión) y **absorción de escudos** (cada escudo absorbe 5 puntos y se informa `vidaDespues`). Ambas devuelven el mismo formato `VeredictoRegla`. La condición previa la reutiliza el escenario antes de consultar A2 y A3; la absorción rechaza con `400 REGLA_RECHAZADA` cuando el daño declarado no coincide con el calculado.
 
 ## 3. Endpoint propio de A1
 
@@ -152,14 +152,14 @@ A1 traduce el rechazo a `400 RECHAZO_A3` (código externo `REGLA_RECHAZADA`).
 
 ### Reglas propias publicadas por A1
 
-A1 publica sus propias reglas con un único formato de respuesta, `VeredictoRegla`: `regla`, `aceptada`, `potencia`, `potenciaMaxima`, `escudosDisponibles`, `escudosConsumidos`, `danioCalculado`, `bloquesCaidos` y `motivo`.
+A1 publica sus propias reglas con un único formato de respuesta, `VeredictoRegla`: `regla`, `aceptada`, `jugadorId`, `monstruoId`, `tiposCorrectos`, `jugadorVivo`, `monstruoVivo`, `vidaJugador`, `vidaMonstruo`, `potencia`, `escudosDisponibles`, `escudosConsumidos`, `danioCalculado`, `vidaDespues` y `motivo`. Los campos que no aplican a una regla se devuelven como `null`.
 
 | Endpoint | Entrada | Regla |
 |---|---|---|
-| `POST /minecraft/reglas/danio-caida` | `alturaInicial`, `alturaFinal`, `danioDeclarado` | 3 bloques seguros; desde el cuarto, 1 punto por bloque. |
-| `POST /minecraft/reglas/absorcion-escudo` | `potencia`, `escudosDisponibles`, `danioDeclarado` | Cada escudo absorbe 5 puntos. |
+| `POST /minecraft/reglas/condicion-previa` | `jugadorId`, `monstruoId` | Ambos existen en A1, tienen el tipo correcto y están vivos antes de la explosión. |
+| `POST /minecraft/reglas/absorcion-escudo` | `potencia`, `escudosDisponibles`, `vidaJugador`, `danioDeclarado` | Cada escudo absorbe 5 puntos: `escudosConsumidos = ceil(potencia / 5)`, `danioCalculado = max(0, potencia - 5 * escudosConsumidos)` y `vidaDespues = max(0, vidaJugador - danioCalculado)`. |
 
-Ejemplo de daño por caída: caer de la altura `10` a la `5` son 5 bloques, por lo que el daño calculado es `2`. Si `danioDeclarado` es `3`, A1 responde `400 REGLA_RECHAZADA`.
+Ejemplo de condición previa: con ids `1` y `2` se devuelve `aceptada: true`, `tiposCorrectos: true` y `jugadorVivo`/`monstruoVivo` en `true`. Con un id inexistente, un tipo incorrecto o una entidad muerta, A1 responde `400 REGLA_RECHAZADA`. Ejemplo de absorción: potencia `10`, 2 escudos y vida `20` consumen 2 escudos, dejan `0` de daño y `vidaDespues: 20`; si `danioDeclarado` es `3`, A1 responde `400 REGLA_RECHAZADA`.
 
 ## 5. Mapeo de errores
 
@@ -167,7 +167,8 @@ Ejemplo de daño por caída: caer de la altura `10` a la `5` son 5 bloques, por 
 |---|---|---|---|
 | A2 rechaza (`422`), o falta/cambia un campo obligatorio | `RECHAZO_A2` / `FALLO_A2` | 400 / 502 | `Rechazo de A2: ...` / `Fallo al consultar A2: ...` |
 | A3 rechaza (`400`), o falta/cambia un campo obligatorio | `RECHAZO_A3` / `FALLO_A3` | 400 / 502 | `Rechazo de A3: ...` / `Fallo al consultar A3: ...` |
-| Regla propia con daño declarado distinto del calculado | `REGLA_RECHAZADA` | 400 | `Con ... el daño es ...` |
+| Condición previa inválida (id ausente, tipo incorrecto o entidad muerta) | `REGLA_RECHAZADA` | 400 | `No existe ...`, `La entidad ... no es ...` o `El jugador y el monstruo deben estar vivos...` |
+| Regla de absorción con daño declarado distinto del calculado | `REGLA_RECHAZADA` | 400 | `Con ... escudo(s) el daño es ...` |
 | JSON ilegible en una regla propia | `CUERPO_ILEGIBLE` | 400 | `El cuerpo de la petición no es un JSON válido` |
 | Entidad muerta en POO-08 | `ENTIDAD_MUERTA` | 409 | handler ya existente |
 
@@ -181,10 +182,11 @@ Solo se guarda después de que A2 y A3 aceptan y la simulación termina correcta
 
 ## 7. Cómo se probó
 
-- `./mvnw test`: 31 tests (26 de integración, 4 de dominio y 1 de arranque), 0 fallos, 0 errores.
+- `./mvnw test`: 27 tests en un único `ApplicationTest`, 0 fallos, 0 errores.
 - Tests del escenario: camino feliz, rechazo de A2, rechazo de A3, persistencia condicional con un jugador extra y campos `radio`/`distancia` enviados a cada compañero.
 - Tests estrictos de integración con un `HttpServer` local: cuerpo exacto enviado, campos obligatorios presentes, campos faltantes o con tipo incorrecto, `status`/`estado` coherentes y rechazos traducidos a excepciones de A1.
-- Tests de reglas propias: daño por caída, absorción de escudos y daño declarado incorrecto.
+- Tests de reglas propias: condición previa aceptada y rechazada, absorción de escudos y daño declarado incorrecto.
+- El `GET /` quedó documentado en OpenAPI con `@Tag`, `@Operation` y `@ApiResponse`; `OpenApiConfig` describe el escenario, las dos reglas, la tabla de errores y las credenciales de acceso.
 - Los OpenAPI reales se verificaron levantando A2 en `8081` y A3 en `8082`; los ejemplos de este documento son las respuestas observadas, no suposiciones.
 - La colección de Insomnia del repositorio es `insomnia/minecraft-insomnia.json` (POO-08); POO-09 se prueba con los endpoints documentados en `/v3/api-docs` y con los tests de integración.
 - IMPORTANTE: los tests usan H2 en memoria; no modifican `./data/minecraft`.

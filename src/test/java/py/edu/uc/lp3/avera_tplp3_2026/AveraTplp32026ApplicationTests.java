@@ -42,7 +42,7 @@ import py.edu.uc.lp3.avera_tplp3_2026.integration.ReglaExternaClient;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.JugadaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.AbsorcionEscudoRequest;
-import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.CaidaRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.CondicionPreviaRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EntidadRequest;
@@ -50,6 +50,7 @@ import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.VeredictoRegla;
 import py.edu.uc.lp3.avera_tplp3_2026.service.ComportamientoService;
+import py.edu.uc.lp3.avera_tplp3_2026.service.CondicionPreviaService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.ReglaService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.EntidadService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.SimulacionService;
@@ -83,6 +84,9 @@ class ApplicationTest {
 
     @Autowired
     private ReglaService reglaService;
+
+    @Autowired
+    private CondicionPreviaService condicionPreviaService;
 
     private final List<HttpServer> servidores = new ArrayList<>();
 
@@ -121,7 +125,7 @@ class ApplicationTest {
     }
 
     private EscenarioServiceImpl escenarioCon(ReglaExternaClient cliente) {
-        return new EscenarioServiceImpl(repository, jugadaRepository, simulacionService, cliente);
+        return new EscenarioServiceImpl(jugadaRepository, simulacionService, cliente, condicionPreviaService);
     }
 
     private ReglaExternaClient clienteQueAcepta() {
@@ -378,37 +382,63 @@ class ApplicationTest {
     }
 
     @Test
-    void miReglaDeCaidaCalculaElDanioDespuesDeTresBloques() {
-        VeredictoRegla verdict = reglaService.danioCaida(new CaidaRequest(12.0, 2.0, 7));
+    void miRegla1AceptaCuandoJugadorYMonstruoExistenYEstanVivos() {
+        PersonajeJugable jugador = guardarSteve("escudo");
+        Monstruo creeper = guardarCreeper();
+
+        VeredictoRegla verdict = reglaService.validarCondicionPrevia(
+                new CondicionPreviaRequest(jugador.getId(), creeper.getId()));
 
         assertTrue(verdict.aceptada());
-        assertEquals(10, verdict.bloquesCaidos());
-        assertEquals(7, verdict.danioCalculado());
-        assertEquals("danio-caida", verdict.regla());
+        assertEquals("condicion-previa", verdict.regla());
+        assertEquals(jugador.getId(), verdict.jugadorId());
+        assertEquals(creeper.getId(), verdict.monstruoId());
+        assertTrue(verdict.tiposCorrectos());
+        assertTrue(verdict.jugadorVivo());
+        assertTrue(verdict.monstruoVivo());
     }
 
     @Test
-    void miReglaDeCaidaRechazaDanioDeclaradoIncorrecto() {
+    void miRegla1RechazaCuandoElMonstruoEstaMuerto() {
+        PersonajeJugable jugador = guardarSteve();
+        Monstruo creeper = guardarCreeper();
+        simulacionService.simularExplosion(creeper.getId(), 10);
+
         ReglaRechazadaException ex = assertThrows(ReglaRechazadaException.class,
-                () -> reglaService.danioCaida(new CaidaRequest(12.0, 2.0, 5)));
+                () -> reglaService.validarCondicionPrevia(
+                        new CondicionPreviaRequest(jugador.getId(), creeper.getId())));
 
         assertEquals("REGLA_RECHAZADA", ex.getCodigo());
     }
 
     @Test
-    void miRegla2CalculaElDanioDespuesDeLosEscudos() {
+    void miRegla1RechazaCuandoElTipoEsIncorrecto() {
+        PersonajeJugable jugador = guardarSteve();
+        Animal vaca = guardarVaca();
+
+        ReglaRechazadaException ex = assertThrows(ReglaRechazadaException.class,
+                () -> reglaService.validarCondicionPrevia(
+                        new CondicionPreviaRequest(jugador.getId(), vaca.getId())));
+
+        assertEquals("REGLA_RECHAZADA", ex.getCodigo());
+    }
+
+    @Test
+    void miRegla2CalculaElDanioYLaVidaDespuesDeLosEscudos() {
         VeredictoRegla verdict = reglaService.absorcionEscudo(
-                new AbsorcionEscudoRequest(10, 2, 0));
+                new AbsorcionEscudoRequest(10, 2, 20, 0));
 
         assertTrue(verdict.aceptada());
+        assertEquals("absorcion-escudo", verdict.regla());
         assertEquals(2, verdict.escudosConsumidos());
         assertEquals(0, verdict.danioCalculado());
+        assertEquals(20, verdict.vidaDespues());
     }
 
     @Test
     void miRegla2RechazaDanioDeclaradoIncorrecto() {
         ReglaRechazadaException ex = assertThrows(ReglaRechazadaException.class,
-                () -> reglaService.absorcionEscudo(new AbsorcionEscudoRequest(10, 2, 3)));
+                () -> reglaService.absorcionEscudo(new AbsorcionEscudoRequest(10, 2, 20, 3)));
 
         assertEquals("REGLA_RECHAZADA", ex.getCodigo());
     }

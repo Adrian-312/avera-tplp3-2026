@@ -1101,7 +1101,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/v3/api-docs",
       "name": "GET OpenAPI de A1 (contrato actualizado)",
-      "description": "Esperado: 200 con OpenAPI 3. Verificar que aparezcan /minecraft/reglas/danio-caida, /minecraft/reglas/absorcion-escudo, /minecraft/escenarios/explosion-validada con RECHAZO_A2/A3 y FALLO_A2/A3, y los campos radio y distancia de EscenarioRequest.",
+      "description": "Esperado: 200 con OpenAPI 3. Verificar que aparezcan /minecraft/reglas/condicion-previa, /minecraft/reglas/absorcion-escudo (con vidaDespues), /minecraft/escenarios/explosion-validada con RECHAZO_A2/A3 y FALLO_A2/A3, y que GET / tenga descripción en Swagger UI.",
       "method": "GET",
       "parameters": [],
       "authentication": {},
@@ -1191,9 +1191,9 @@
       "parentId": "fld_07_openapi",
       "modified": 1794225600000,
       "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/reglas/danio-caida",
-      "name": "POST regla A1 · daño por caída (200)",
-      "description": "Regla nueva del cambio: 10.0 -> 5.0 son 5 bloques caídos; los primeros 3 no hacen daño, así que danioCalculado=2. Esperado 200 con regla='danio-caida' y bloquesCaidos=5.",
+      "url": "{{ _.base_url }}/minecraft/reglas/condicion-previa",
+      "name": "POST regla A1 · condición previa (200)",
+      "description": "Regla 1: el jugador y el monstruo deben existir, ser PersonajeJugable y Monstruo y estar vivos. Esperado 200 con regla='condicion-previa', tiposCorrectos=true y las vidas de ambos. No modifica la base.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1208,7 +1208,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"alturaInicial\": 10.0,\n  \"alturaFinal\": 5.0,\n  \"danioDeclarado\": 2\n}"
+        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\"\n}"
       },
       "headers": [
         {
@@ -1224,7 +1224,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/minecraft/reglas/absorcion-escudo",
       "name": "POST regla A1 · absorción de escudo (200)",
-      "description": "Regla nueva del cambio: cada escudo absorbe 5 puntos. Con potencia 12 y 3 escudos, escudosConsumidos=3 y danioCalculado=0. Esperado 200 con regla='absorcion-escudo'.",
+      "description": "Regla 2: cada escudo absorbe 5 puntos. Con potencia 12, 3 escudos y vida 20: escudosConsumidos=3, danioCalculado=0 y vidaDespues=20. Esperado 200 con regla='absorcion-escudo'.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1239,7 +1239,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"potencia\": 12,\n  \"escudosDisponibles\": 3,\n  \"danioDeclarado\": 0\n}"
+        "text": "{\n  \"potencia\": 12,\n  \"escudosDisponibles\": 3,\n  \"vidaJugador\": 20,\n  \"danioDeclarado\": 0\n}"
       },
       "headers": [
         {
@@ -1621,13 +1621,13 @@
       ]
     },
     {
-      "_id": "req_094_a1_caida",
+      "_id": "req_094_a1_condicion_previa",
       "parentId": "fld_09_contratos_directos",
       "modified": 1794225600000,
       "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/reglas/danio-caida",
-      "name": "A1 · POST daño por caída (200)",
-      "description": "200: 5 bloques caídos desde 10 hasta 5 => danioCalculado=2.",
+      "url": "{{ _.base_url }}/minecraft/reglas/condicion-previa",
+      "name": "A1 · POST condición previa (200)",
+      "description": "200: el jugador y el monstruo existen, tienen el tipo correcto y están vivos. Devuelve jugadorVivo=true, monstruoVivo=true y tiposCorrectos=true.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1642,7 +1642,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"alturaInicial\": 10.0,\n  \"alturaFinal\": 5.0,\n  \"danioDeclarado\": 2\n}"
+        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\"\n}"
       },
       "headers": [
         {
@@ -1652,13 +1652,13 @@
       ]
     },
     {
-      "_id": "req_095_a1_caida_rechazo",
+      "_id": "req_095_a1_condicion_previa_rechazo",
       "parentId": "fld_09_contratos_directos",
       "modified": 1794225600000,
       "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/reglas/danio-caida",
-      "name": "A1 · POST daño declarado incorrecto (400)",
-      "description": "400 REGLA_RECHAZADA: el daño calculado es 2, no 3.",
+      "url": "{{ _.base_url }}/minecraft/reglas/condicion-previa",
+      "name": "A1 · POST condición previa con id inexistente (400)",
+      "description": "400 REGLA_RECHAZADA: no existe el monstruo 9999, así que la jugada no es legal. No modifica la base.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1673,7 +1673,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"alturaInicial\": 10.0,\n  \"alturaFinal\": 5.0,\n  \"danioDeclarado\": 3\n}"
+        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.id_inexistente }}\"\n}"
       },
       "headers": [
         {
@@ -1689,7 +1689,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/minecraft/reglas/absorcion-escudo",
       "name": "A1 · POST absorción de escudos (200)",
-      "description": "200: potencia 12 y 3 escudos => escudosConsumidos=3, danioCalculado=0.",
+      "description": "200: potencia 12, 3 escudos y vida 20 => escudosConsumidos=3, danioCalculado=0 y vidaDespues=20.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1704,7 +1704,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"potencia\": 12,\n  \"escudosDisponibles\": 3,\n  \"danioDeclarado\": 0\n}"
+        "text": "{\n  \"potencia\": 12,\n  \"escudosDisponibles\": 3,\n  \"vidaJugador\": 20,\n  \"danioDeclarado\": 0\n}"
       },
       "headers": [
         {

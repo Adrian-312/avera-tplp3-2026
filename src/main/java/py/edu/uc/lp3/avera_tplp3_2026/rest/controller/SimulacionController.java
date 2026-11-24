@@ -6,9 +6,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import py.edu.uc.lp3.avera_tplp3_2026.exception.ErrorResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ExplosionRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.SimulacionResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.service.SimulacionService;
@@ -29,9 +32,12 @@ public class SimulacionController {
     @Operation(summary = "Simular explosión", description = "Aplica la onda a todas las entidades guardadas y persiste las nuevas vidas y los escudos consumidos. Tras morir, el Creeper queda en vida 0 y ya no puede explotar.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Simulación persistida; el cuerpo trae el estado de cada entidad"),
-            @ApiResponse(responseCode = "400", description = "ENTIDAD_INVALIDA: monstruo no hostil o potencia fuera de rango"),
-            @ApiResponse(responseCode = "409", description = "ENTIDAD_MUERTA: el monstruo ya explotó"),
-            @ApiResponse(responseCode = "404", description = "ENTIDAD_NO_ENCONTRADA")
+            @ApiResponse(responseCode = "400", description = "ENTIDAD_INVALIDA: monstruo no hostil o potencia fuera de rango",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "ENTIDAD_MUERTA: el monstruo ya explotó",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "ENTIDAD_NO_ENCONTRADA",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public SimulacionResponse explosion(@RequestBody ExplosionRequest request) {
         return service.simularExplosion(request.monstruoId(), request.potencia());

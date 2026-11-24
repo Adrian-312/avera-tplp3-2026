@@ -34,7 +34,7 @@ El servicio queda en <http://localhost:8080/> y la consola de la base en <http:/
 
 | Verbo y URL | Qué hace | Éxito |
 |---|---|---|
-| `GET /` | Confirma que el servicio vive | 200 |
+| `GET /` | Confirma que el servicio vive y enlaza su OpenAPI y Swagger UI | 200 |
 | `POST /minecraft/entidades` | Crea una entidad (`tipo`: jugador, monstruo, animal o planta) | 201 |
 | `GET /minecraft/entidades` | Lista; filtros opcionales `nombre` y `vidaMinima` | 200 |
 | `GET /minecraft/entidades/{id}` | Devuelve una entidad | 200 |
@@ -44,8 +44,8 @@ El servicio queda en <http://localhost:8080/> y la consola de la base en <http:/
 | `GET /minecraft/explosivos` | Todo lo que implementa la interface `Explosivo` | 200 |
 | `GET /minecraft/acciones` | Acción especial de cada entidad (polimorfismo) | 200 |
 | `POST /minecraft/simulacion/explosion` | Simula la explosión de un monstruo | 200 |
-| `POST /minecraft/reglas/danio-caida` | Regla publicada: daño por caída (3 bloques seguros, luego 1 por bloque) | 200 |
-| `POST /minecraft/reglas/absorcion-escudo` | Regla publicada: cada escudo absorbe 5 puntos | 200 |
+| `POST /minecraft/reglas/condicion-previa` | Regla publicada: jugador y monstruo existen, tienen el tipo correcto y están vivos | 200 |
+| `POST /minecraft/reglas/absorcion-escudo` | Regla publicada: cada escudo absorbe 5 puntos y devuelve `vidaDespues` | 200 |
 | `POST /minecraft/escenarios/explosion-validada` | Consulta A2 y A3, simula y guarda la jugada | 201 |
 | `GET /minecraft/escenarios` | Lista el historial de jugadas | 200 |
 | `GET /v3/api-docs` / `GET /swagger-ui.html` | Documentación OpenAPI generada | 200 |
@@ -57,7 +57,7 @@ Errores (JSON con `timestamp`, `status`, `codigo`, `mensaje` y `path`):
 | `EntidadNoEncontradaException` | 404 | `ENTIDAD_NO_ENCONTRADA` |
 | `EntidadInvalidaException` | 400 | `ENTIDAD_INVALIDA` |
 | `EntidadMuertaException` (`PUT`/`PATCH` sobre entidad muerta) | 409 | `ENTIDAD_MUERTA` |
-| `ReglaRechazadaException` (daño declarado distinto del calculado) | 400 | `REGLA_RECHAZADA` |
+| `ReglaRechazadaException` (condición previa inválida o daño declarado distinto del calculado) | 400 | `REGLA_RECHAZADA` |
 | JSON ilegible (Spring) | 400 | `CUERPO_ILEGIBLE` |
 | Parámetro con tipo inválido (por ejemplo `/minecraft/entidades/abc`) | 400 | `PARAMETRO_INVALIDO` |
 | Rechazo de A2 / A3 | 400 | `RECHAZO_A2` / `RECHAZO_A3` |
@@ -394,9 +394,13 @@ classDiagram
         +ejecutar(EscenarioRequest) EscenarioResponse
         +listar() List~Jugada~
     }
+    class CondicionPreviaService {
+        <<interface>>
+        +validar(Long, Long) Participantes
+    }
     class ReglaService {
         <<interface>>
-        +danioCaida(CaidaRequest) VeredictoRegla
+        +validarCondicionPrevia(CondicionPreviaRequest) VeredictoRegla
         +absorcionEscudo(AbsorcionEscudoRequest) VeredictoRegla
     }
 
@@ -458,14 +462,22 @@ classDiagram
         -JugadaRepository jugadaRepository
         -SimulacionService simulacionService
         -ReglaExternaClient reglaExternaClient
-        +EscenarioServiceImpl(EntidadVivaRepository, JugadaRepository, SimulacionService, ReglaExternaClient)
+        +EscenarioServiceImpl(JugadaRepository, SimulacionService, ReglaExternaClient, CondicionPreviaService)
         +ejecutar(EscenarioRequest) EscenarioResponse
         +listar() List~Jugada~
     }
 
+    class CondicionPreviaServiceImpl {
+        <<Service>>
+        -EntidadVivaRepository repository
+        +CondicionPreviaServiceImpl(EntidadVivaRepository)
+        +validar(Long, Long) Participantes
+    }
     class ReglaServiceImpl {
         <<Service>>
-        +danioCaida(CaidaRequest) VeredictoRegla
+        -CondicionPreviaService condicionPreviaService
+        +ReglaServiceImpl(CondicionPreviaService)
+        +validarCondicionPrevia(CondicionPreviaRequest) VeredictoRegla
         +absorcionEscudo(AbsorcionEscudoRequest) VeredictoRegla
     }
 
@@ -570,15 +582,18 @@ classDiagram
     SimulacionService <|.. SimulacionServiceImpl
     ComportamientoService <|.. ComportamientoServiceImpl
     EscenarioService <|.. EscenarioServiceImpl
+    CondicionPreviaService <|.. CondicionPreviaServiceImpl
     ReglaService <|.. ReglaServiceImpl
 
     EntidadServiceImpl --> EntidadVivaRepository
     SimulacionServiceImpl --> EntidadVivaRepository
     ComportamientoServiceImpl --> EntidadVivaRepository
-    EscenarioServiceImpl --> EntidadVivaRepository
+    CondicionPreviaServiceImpl --> EntidadVivaRepository
     EscenarioServiceImpl --> JugadaRepository
     EscenarioServiceImpl --> SimulacionService
     EscenarioServiceImpl --> ReglaExternaClient
+    EscenarioServiceImpl --> CondicionPreviaService
+    ReglaServiceImpl --> CondicionPreviaService
     ReglaExternaClient --> Companero : claves de los mapas
     ReglaExternaClient *-- RespuestaCruda : crea
 
@@ -654,7 +669,7 @@ classDiagram
         <<RestController>>
         -ReglaService service
         +ReglaController(ReglaService)
-        +danioCaida(CaidaRequest) VeredictoRegla
+        +condicionPrevia(CondicionPreviaRequest) VeredictoRegla
         +absorcionEscudo(AbsorcionEscudoRequest) VeredictoRegla
     }
 
@@ -768,28 +783,34 @@ classDiagram
         String codigo
         +ValidacionExternaResponse(boolean, String, String)
     }
-    class CaidaRequest {
+    class CondicionPreviaRequest {
         <<record>>
-        Double alturaInicial
-        Double alturaFinal
-        Integer danioDeclarado
+        Long jugadorId
+        Long monstruoId
     }
     class AbsorcionEscudoRequest {
         <<record>>
         Integer potencia
         Integer escudosDisponibles
+        Integer vidaJugador
         Integer danioDeclarado
     }
     class VeredictoRegla {
         <<record>>
         String regla
         boolean aceptada
+        Long jugadorId
+        Long monstruoId
+        Boolean tiposCorrectos
+        Boolean jugadorVivo
+        Boolean monstruoVivo
+        Integer vidaJugador
+        Integer vidaMonstruo
         Integer potencia
-        Integer potenciaMaxima
         Integer escudosDisponibles
         Integer escudosConsumidos
         Integer danioCalculado
-        Integer bloquesCaidos
+        Integer vidaDespues
         String motivo
     }
 
@@ -864,7 +885,7 @@ classDiagram
     EscenarioController ..> ApiPaths : mapea
     ReglaController --> ReglaService : usa
     ReglaController ..> ApiPaths : mapea
-    ReglaController ..> CaidaRequest : recibe
+    ReglaController ..> CondicionPreviaRequest : recibe
     ReglaController ..> AbsorcionEscudoRequest : recibe
     ReglaController ..> VeredictoRegla : devuelve
 
@@ -874,7 +895,7 @@ classDiagram
 ```
 
 - **Herencia** (`<|--`): `PersonajeJugable` y `PersonajeNoJugable` son entidades vivas; `Monstruo`, `Animal` y `Planta` son personajes no jugables. Las excepciones forman dos ramas: `MinecraftException` y `IntegracionExternaException`, ambas hijas de `RuntimeException`.
-- **Implementación de interface** (`<|..`): `PersonajeJugable` y `Monstruo`, de familias distintas, implementan `Explosivo`. Los cuatro services siguen el mismo patrón con sus implementaciones, y los dos repositorios extienden `JpaRepository`.
+- **Implementación de interface** (`<|..`): `PersonajeJugable` y `Monstruo`, de familias distintas, implementan `Explosivo`. Los cinco services siguen el mismo patrón con sus implementaciones, y los dos repositorios extienden `JpaRepository`.
 - **Composición** (`*--`): `SimulacionResponse` contiene su record anidado `ResultadoEntidad`, y `ReglaExternaClient` crea su record interno `RespuestaCruda`.
 - **Uso de interfaces** (`..>`): los controllers solo conocen la interface de service; los services solo conocen la interface de repositorio. `EscenarioServiceImpl` además coordina a `SimulacionService` y `ReglaExternaClient`, sin importar implementaciones concretas.
 - **Ocultamiento:** `EntidadViva` y sus hijas son estado y comportamiento polimórfico; las validaciones, las dos reglas del juego y las excepciones viven en `service.impl`. Los constructores sin argumentos que pide JPA son `protected` y las constantes están centralizadas en `MinecraftConstants`.
@@ -1005,9 +1026,10 @@ Archivo: [`insomnia/minecraft-insomnia.json`](insomnia/minecraft-insomnia.json).
 5. `04 - Errores`: un pedido por cada excepción (400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA`, 400 `CUERPO_ILEGIBLE` y 400 al re-explosionar el Creeper muerto). El orden importa: la carpeta usa al Creeper ya explotado y a la vaca todavía viva.
 6. `05 - Entidad muerta (no revive, no actúa)`: regresión del bug corregido. `PATCH` y `PUT` con vida 20 sobre el Creeper devuelven 409 `ENTIDAD_MUERTA` y un `GET` posterior sigue mostrando `vida: 0`; `/acciones` y `/explosivos` ya no listan al muerto; `POST` con vida 0, `PUT` sin vida y `PATCH` con vida 0 devuelven 400.
 7. `06 - DELETE`: borra la vaca y confirma el 404.
+8. `07 - OpenAPI y reglas publicadas (POO-09)`: verifica los OpenAPI de A1/A2/A3, el `GET /` documentado y las dos reglas de A1 (`condicion-previa` y `absorcion-escudo`).
 
-8. `08 - Escenario cruzado A1 + A2 + A3 (POO-09)`: con A2 en `8081` y A3 en `8082`, crear jugador con escudos y Creeper vivo, ejecutar el caso feliz, ver la jugada persistida y después forzar un rechazo de A2 (`radio: 0.0`) y otro de A3 (`distancia: 14.14`, `radio: 3.0`).
-9. `09 - Contratos directos y reglas propias (POO-09)`: llama a A2, A3 y a `/minecraft/reglas/danio-caida` y `/minecraft/reglas/absorcion-escudo`. Las respuestas verificadas están en [`insomnia/respuestas-ejemplo.md`](insomnia/respuestas-ejemplo.md).
+9. `08 - Escenario cruzado A1 + A2 + A3 (POO-09)`: con A2 en `8081` y A3 en `8082`, crear jugador con escudos y Creeper vivo, ejecutar el caso feliz, ver la jugada persistida y después forzar un rechazo de A2 (`radio: 0.0`) y otro de A3 (`distancia: 14.14`, `radio: 3.0`).
+10. `09 - Contratos directos y reglas propias (POO-09)`: llama a A2, A3 y a `/minecraft/reglas/condicion-previa` y `/minecraft/reglas/absorcion-escudo`. Las respuestas verificadas están en [`insomnia/respuestas-ejemplo.md`](insomnia/respuestas-ejemplo.md).
 
 La simulación de POO-09 (A2 → A3 → jugada persistida) también se prueba con los endpoints `/minecraft/escenarios/explosion-validada` y `/minecraft/escenarios`, documentados en `/v3/api-docs`.
 
@@ -1015,11 +1037,11 @@ La simulación de POO-09 (A2 → A3 → jugada persistida) también se prueba co
 
 - `domain`: entidades, `Explosivo`, `Explosion` y la nueva entidad `Jugada`.
 - `repository`: `EntidadVivaRepository` y `JugadaRepository`.
-- `service` / `service.impl`: lógica, validaciones, transacciones, `EscenarioService` (A2 → A3 → simulación → persistencia) y `ReglaService` (daño de caída y absorción de escudos).
+- `service` / `service.impl`: lógica, validaciones, transacciones, `EscenarioService` (A2 → A3 → simulación → persistencia) y `CondicionPreviaService` (condición previa compartida) y `ReglaService` (condición previa y absorción de escudos).
 - `integration`: `ReglaExternaClient` y el enum `Companero` para consumir A2 y A3 con `WebClient`.
 - `config`: `OpenApiConfig` (springdoc) y `WebClientConfig` (timeouts).
 - `exception`: jerarquía de excepciones, `ErrorResponse` y `GlobalExceptionHandler`, que traduce todo a HTTP (incluye los códigos `RECHAZO_*` y `FALLO_*`).
-- `rest.controller`: controllers HTTP, con `EscenarioController` y `ReglaController` (daño de caída y absorción de escudos). `rest.dto`: cuerpos de entrada y salida.
+- `rest.controller`: controllers HTTP, con `EscenarioController` y `ReglaController` (condición previa y absorción de escudos). `rest.dto`: cuerpos de entrada y salida.
 
 ## Licencia
 

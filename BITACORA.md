@@ -97,3 +97,35 @@ Revisé y probé lo generado: arranqué el servicio, recorrí la colección de I
 
 - Elegí el escenario del Creeper, el orden A2 → A3 y las reglas de los rechazos (`RECHAZO_*` = 400, `FALLO_*` = 502).
 - Confirmé que no se borrara ningún archivo y que la parte del grupo quedara marcada como **PENDIENTE** hasta tener los OpenAPI de A2 y A3.
+
+---
+
+## Entrada del 23 de noviembre de 2026
+
+- **Asistente:** OpenCode, usado desde la CLI en el repositorio local.
+- **Modelo de LLM:** `opencode/big-pickle`
+- **Fecha:** 23 de noviembre de 2026
+
+### Resumen de prompts
+
+1. Dije que no entendía las reglas de juego del POO-09, pedí revisarlas contra el repo de referencia `https://github.com/javifacha123/ja-taller-git-2026`, dejar Swagger UI e Insomnia más completos y arreglar el `IndexController`, que aparecía en blanco. Si una regla no era coherente, pedí sacar el daño por caída y poner una regla que cerrara con el escenario.
+2. Aclaré que las dos reglas debían ser: condición previa (jugador y monstruo existen, son del tipo correcto y están vivos antes de la explosión) y efecto sobre el jugador y sus escudos (daño de la explosión descontando escudos y calculando `vidaDespues`).
+3. Pedí continuar con los pasos pendientes cuando se detuvo la sesión.
+
+### Qué aportó la IA
+
+- Leyó el repo de referencia y los enunciados del POO-09; no copió código del compañero, solo tomó la estructura de documentación y anotaciones.
+- Eliminó `CaidaRequest`, el endpoint `danio-caida`, `ALTURA_SEGURA_CAIDA` y los campos `potenciaMaxima`/`bloquesCaidos` de `VeredictoRegla`.
+- Agregó `CondicionPreviaRequest`, `CondicionPreviaService` y `CondicionPreviaServiceImpl`. Esa validación es la REGLA 1 y la reutiliza `EscenarioServiceImpl` antes de consultar A2 y A3.
+- Reformuló la REGLA 2 con `vidaJugador`, `escudosConsumidos`, `danioCalculado` y `vidaDespues`, con `ceil(potencia / 5)` como consumo de escudos.
+- Documentó `GET /` con `@Tag`, `@Operation` y `@ApiResponse`, y amplió `OpenApiConfig` con descripción de reglas, fórmulas, escenario, errores y H2.
+- Actualizó tests, README (incluido el diagrama Mermaid), `RUN.md`, `docs/POO09-APLICADO.md`, `insomnia/minecraft-insomnia.json`, `insomnia/README.md` y `insomnia/respuestas-ejemplo.md`. El JSON de Insomnia se validó con `python3 -m json.tool`.
+- Verificación: `./mvnw test` → 27 tests, 0 fallos, 0 errores. El primer intento con timeout de 300 s se cortó por lentitud del entorno, no por un test; con 900 s terminó en 1:36.
+- Verificación extra: levantó A1 en el puerto 18080 con H2 en memoria y comprobó que `/v3/api-docs` expone `GET /` con resumen, las dos reglas y los seis tags esperados.
+- No hizo commit: los cambios quedaron en el working tree para revisión.
+
+### Qué hice yo
+
+- Corregí el rumbo de las reglas: descarté el daño por caída y elegí la condición previa como primera regla.
+- Acepté que la condición previa se publique sola y también se use dentro del escenario, para no duplicar validaciones.
+- Revisé que Insomnia y la documentación ya no mencionaran la regla eliminada.

@@ -7,12 +7,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import py.edu.uc.lp3.avera_tplp3_2026.domain.EntidadViva;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Jugada;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Monstruo;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.PersonajeJugable;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadInvalidaException;
-import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadNoEncontradaException;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.RechazoExternoException;
 import py.edu.uc.lp3.avera_tplp3_2026.integration.Companero;
 import py.edu.uc.lp3.avera_tplp3_2026.integration.ReglaExternaClient;
@@ -23,49 +21,40 @@ import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.SimulacionResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.service.CondicionPreviaService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.EscenarioService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.SimulacionService;
 
 @Service
 public class EscenarioServiceImpl implements EscenarioService {
 
-    private final EntidadVivaRepository entidadRepository;
     private final JugadaRepository jugadaRepository;
     private final SimulacionService simulacionService;
     private final ReglaExternaClient reglaExternaClient;
+    private final CondicionPreviaService condicionPreviaService;
 
-    public EscenarioServiceImpl(EntidadVivaRepository entidadRepository,
-                                JugadaRepository jugadaRepository,
+    public EscenarioServiceImpl(JugadaRepository jugadaRepository,
                                 SimulacionService simulacionService,
-                                ReglaExternaClient reglaExternaClient) {
-        this.entidadRepository = entidadRepository;
+                                ReglaExternaClient reglaExternaClient,
+                                CondicionPreviaService condicionPreviaService) {
         this.jugadaRepository = jugadaRepository;
         this.simulacionService = simulacionService;
         this.reglaExternaClient = reglaExternaClient;
+        this.condicionPreviaService = condicionPreviaService;
     }
 
     @Override
     @Transactional
     public EscenarioResponse ejecutar(EscenarioRequest request) {
-        if (request == null || request.jugadorId() == null || request.monstruoId() == null) {
-            throw new EntidadInvalidaException("jugadorId y monstruoId son obligatorios");
+        if (request == null) {
+            throw new EntidadInvalidaException("El cuerpo del escenario es obligatorio");
         }
 
-        EntidadViva jugadorEntidad = entidadRepository.findById(request.jugadorId())
-                .orElseThrow(() -> new EntidadNoEncontradaException(
-                        "No existe el jugador " + request.jugadorId()));
-        EntidadViva monstruoEntidad = entidadRepository.findById(request.monstruoId())
-                .orElseThrow(() -> new EntidadNoEncontradaException(
-                        "No existe el monstruo " + request.monstruoId()));
-        if (!(jugadorEntidad instanceof PersonajeJugable jugador)) {
-            throw new EntidadInvalidaException("La entidad " + request.jugadorId() + " no es un jugador");
-        }
-        if (!(monstruoEntidad instanceof Monstruo monstruo)) {
-            throw new EntidadInvalidaException("La entidad " + request.monstruoId() + " no es un monstruo");
-        }
-        if (!jugador.isVivo() || !monstruo.isVivo()) {
-            throw new EntidadInvalidaException("El jugador y el monstruo deben estar vivos antes del escenario");
-        }
+        CondicionPreviaService.Participantes participantes =
+                condicionPreviaService.validar(request.jugadorId(), request.monstruoId());
+        PersonajeJugable jugador = participantes.jugador();
+        Monstruo monstruo = participantes.monstruo();
+
         if (!monstruo.isHostil()) {
             throw new EntidadInvalidaException("El monstruo " + monstruo.getNombre() + " no es hostil");
         }
