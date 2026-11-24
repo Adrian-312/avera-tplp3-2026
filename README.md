@@ -4,7 +4,7 @@ Servicio HTTP sobre el modelado de **Minecraft**. Guarda su estado en una base *
 
 - Autor: Adrian Vera
 - Asignatura: Lenguaje de Programación 3 (CYT646)
-- Entrega POO-09: [documento aplicado](docs/POO09-APLICADO.md) · commit de la solución: `https://github.com/Adrian-312/avera-tplp3-2026/commit/<HASH_DEL_COMMIT>` 
+- Entrega POO-09: [documento aplicado](docs/POO09-APLICADO.md) · commit de la solución: `https://github.com/Adrian-312/avera-tplp3-2026/commit/af26a87412acabec010e2a98695d069c0893b008` 
 
 ## Cómo arrancar
 

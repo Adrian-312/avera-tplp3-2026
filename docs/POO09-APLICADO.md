@@ -2,7 +2,7 @@
 
 - **Fecha:** 22/11/2026
 - **Estudiante:** Adrián Vera (`Adrian-312`)
-- **Commit de entrega:** `https://github.com/Adrian-312/avera-tplp3-2026/commit/<HASH_DEL_COMMIT>
+- **Commit de entrega:** `https://github.com/Adrian-312/avera-tplp3-2026/commit/af26a87412acabec010e2a98695d069c0893b008
 - **Documento base:** [Enunciado POO-09](https://raw.githubusercontent.com/alefq/afq-taller-git-2024/main/docs/ejercicio-poo-09-apis-cruzadas-2026-11-16.md)
 - **Grupos:** [Reparto A2/A3](https://raw.githubusercontent.com/alefq/afq-taller-git-2024/main/docs/ejercicio-poo-09-grupos-2026-11-16.md)
 - **Ejemplo de referencia:** [Ejemplo uno](https://raw.githubusercontent.com/alefq/afq-taller-git-2024/main/docs/ejercicio-poo-09-ejemplo-uno-2026-11-16.md)
