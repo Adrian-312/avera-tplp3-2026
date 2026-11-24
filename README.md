@@ -44,6 +44,8 @@ El servicio queda en <http://localhost:8080/> y la consola de la base en <http:/
 | `GET /minecraft/explosivos` | Todo lo que implementa la interface `Explosivo` | 200 |
 | `GET /minecraft/acciones` | Acción especial de cada entidad (polimorfismo) | 200 |
 | `POST /minecraft/simulacion/explosion` | Simula la explosión de un monstruo | 200 |
+| `POST /minecraft/reglas/danio-caida` | Regla publicada: daño por caída (3 bloques seguros, luego 1 por bloque) | 200 |
+| `POST /minecraft/reglas/absorcion-escudo` | Regla publicada: cada escudo absorbe 5 puntos | 200 |
 | `POST /minecraft/escenarios/explosion-validada` | Consulta A2 y A3, simula y guarda la jugada | 201 |
 | `GET /minecraft/escenarios` | Lista el historial de jugadas | 200 |
 | `GET /v3/api-docs` / `GET /swagger-ui.html` | Documentación OpenAPI generada | 200 |
@@ -55,6 +57,7 @@ Errores (JSON con `timestamp`, `status`, `codigo`, `mensaje` y `path`):
 | `EntidadNoEncontradaException` | 404 | `ENTIDAD_NO_ENCONTRADA` |
 | `EntidadInvalidaException` | 400 | `ENTIDAD_INVALIDA` |
 | `EntidadMuertaException` (`PUT`/`PATCH` sobre entidad muerta) | 409 | `ENTIDAD_MUERTA` |
+| `ReglaRechazadaException` (daño declarado distinto del calculado) | 400 | `REGLA_RECHAZADA` |
 | JSON ilegible (Spring) | 400 | `CUERPO_ILEGIBLE` |
 | Parámetro con tipo inválido (por ejemplo `/minecraft/entidades/abc`) | 400 | `PARAMETRO_INVALIDO` |
 | Rechazo de A2 / A3 | 400 | `RECHAZO_A2` / `RECHAZO_A3` |
@@ -334,6 +337,7 @@ classDiagram
     MinecraftException <|-- EntidadNoEncontradaException
     MinecraftException <|-- EntidadInvalidaException
     MinecraftException <|-- EntidadMuertaException
+    MinecraftException <|-- ReglaRechazadaException
     IntegracionExternaException <|-- RechazoExternoException
 
     GlobalExceptionHandler ..> MinecraftException : traduce a HTTP
@@ -389,6 +393,11 @@ classDiagram
         <<interface>>
         +ejecutar(EscenarioRequest) EscenarioResponse
         +listar() List~Jugada~
+    }
+    class ReglaService {
+        <<interface>>
+        +danioCaida(CaidaRequest) VeredictoRegla
+        +absorcionEscudo(AbsorcionEscudoRequest) VeredictoRegla
     }
 
     class EntidadServiceImpl {
@@ -454,6 +463,12 @@ classDiagram
         +listar() List~Jugada~
     }
 
+    class ReglaServiceImpl {
+        <<Service>>
+        +danioCaida(CaidaRequest) VeredictoRegla
+        +absorcionEscudo(AbsorcionEscudoRequest) VeredictoRegla
+    }
+
     class Companero {
         <<enumeration>>
         A2
@@ -469,8 +484,13 @@ classDiagram
         -ObjectMapper objectMapper
         +ReglaExternaClient(WebClient~Builder~, ObjectMapper, String, String, String, String, long)
         +validar(Companero, ValidacionExternaRequest) ValidacionExternaResponse
-        -textoDe(String, String...) String
-        -valorTexto(JsonNode, String...) String
+        -cuerpoPara(Companero, ValidacionExternaRequest) Map
+        -leerJson(Companero, String) JsonNode
+        -lanzarRechazo(Companero, int, JsonNode) void
+        -decision(Companero, int, JsonNode) ValidacionExternaResponse
+        -textoRequerido(Companero, JsonNode, String) String
+        -numeroRequerido(Companero, JsonNode, String) double
+        -enteroRequerido(Companero, JsonNode, String) int
     }
 
     class RespuestaCruda {
@@ -531,6 +551,9 @@ classDiagram
     class EntidadMuertaException {
         <<externa: exception>>
     }
+    class ReglaRechazadaException {
+        <<externa: exception>>
+    }
     class RechazoExternoException {
         <<externa: exception>>
     }
@@ -547,6 +570,7 @@ classDiagram
     SimulacionService <|.. SimulacionServiceImpl
     ComportamientoService <|.. ComportamientoServiceImpl
     EscenarioService <|.. EscenarioServiceImpl
+    ReglaService <|.. ReglaServiceImpl
 
     EntidadServiceImpl --> EntidadVivaRepository
     SimulacionServiceImpl --> EntidadVivaRepository
@@ -626,13 +650,12 @@ classDiagram
         +explosionValidada(EscenarioRequest) ResponseEntity~EscenarioResponse~
         +listar() List~Jugada~
     }
-    class ValidacionStubController {
+    class ReglaController {
         <<RestController>>
-        -int escudosMinimos
-        -int potenciaMaxima
-        +ValidacionStubController(int, int)
-        +validarA2(ValidacionExternaRequest) ValidacionExternaResponse
-        +validarA3(ValidacionExternaRequest) ValidacionExternaResponse
+        -ReglaService service
+        +ReglaController(ReglaService)
+        +danioCaida(CaidaRequest) VeredictoRegla
+        +absorcionEscudo(AbsorcionEscudoRequest) VeredictoRegla
     }
 
     class EntidadRequest {
@@ -709,7 +732,9 @@ classDiagram
         Long monstruoId
         int potencia
         String motivo
-        +EscenarioRequest(Long, Long, int, String)
+        Double radio
+        Double distancia
+        +EscenarioRequest(Long, Long, int, String, Double, Double)
     }
     class EscenarioResponse {
         <<record>>
@@ -731,8 +756,10 @@ classDiagram
         int escudosDisponibles
         String monstruo
         int potencia
+        double radio
+        double distancia
         String escenario
-        +ValidacionExternaRequest(String, int, int, String, int, String)
+        +ValidacionExternaRequest(String, int, int, String, int, double, double, String)
     }
     class ValidacionExternaResponse {
         <<record>>
@@ -740,6 +767,30 @@ classDiagram
         String motivo
         String codigo
         +ValidacionExternaResponse(boolean, String, String)
+    }
+    class CaidaRequest {
+        <<record>>
+        Double alturaInicial
+        Double alturaFinal
+        Integer danioDeclarado
+    }
+    class AbsorcionEscudoRequest {
+        <<record>>
+        Integer potencia
+        Integer escudosDisponibles
+        Integer danioDeclarado
+    }
+    class VeredictoRegla {
+        <<record>>
+        String regla
+        boolean aceptada
+        Integer potencia
+        Integer potenciaMaxima
+        Integer escudosDisponibles
+        Integer escudosConsumidos
+        Integer danioCalculado
+        Integer bloquesCaidos
+        String motivo
     }
 
     class OpenApiConfig {
@@ -754,7 +805,7 @@ classDiagram
     class ApiPaths {
         <<final>>
         +String ESCENARIO$
-        +String STUB$
+        +String REGLAS$
         +String API_DOCS$
         +String SWAGGER_UI$
         -ApiPaths()
@@ -811,9 +862,11 @@ classDiagram
     EscenarioController ..> EscenarioResponse : devuelve
     EscenarioController ..> Jugada : lista
     EscenarioController ..> ApiPaths : mapea
-    ValidacionStubController ..> ApiPaths : mapea
-    ValidacionStubController ..> ValidacionExternaRequest : recibe
-    ValidacionStubController ..> ValidacionExternaResponse : devuelve
+    ReglaController --> ReglaService : usa
+    ReglaController ..> ApiPaths : mapea
+    ReglaController ..> CaidaRequest : recibe
+    ReglaController ..> AbsorcionEscudoRequest : recibe
+    ReglaController ..> VeredictoRegla : devuelve
 
     WebClientConfig ..> ReglaExternaClient : provee WebClient~Builder~
     OpenApiConfig ..> ApiPaths : lee
@@ -875,32 +928,41 @@ La colección de Insomnia hace exactamente este recorrido (ver más abajo).
 
 ## POO-09 - APIs cruzadas
 
-A1 aporta el escenario del Creeper: antes de simular una explosión contra un jugador con escudos, consulta a A2 (escudos) y a A3 (potencia). Solo si ambos aceptan se guarda una `Jugada` en H2. El detalle completo está en [`docs/POO09-APLICADO.md`](docs/POO09-APLICADO.md).
+A1 aporta el escenario del Creeper: antes de simular una explosión contra un jugador con escudos, consulta a A2 (parámetros de la explosión) y a A3 (daño de la onda expansiva). Solo si ambos aceptan se guarda una `Jugada` en H2. El detalle completo está en [`docs/POO09-APLICADO.md`](docs/POO09-APLICADO.md).
 
-| Grupo | Integrante | Responsabilidad | Repositorio / OpenAPI |
+| Grupo | Integrante | Regla que publica y se consulta | Repositorio / OpenAPI |
 |---|---|---|---|
 | A1 | Adrian Vera (`Adrian-312`) | Dueño del escenario; consulta a A2/A3, simula y persiste. | `https://github.com/Adrian-312/avera-tplp3-2026` · <http://localhost:8080/v3/api-docs> |
-| A2 | **PENDIENTE** | Validar escudos del jugador. | **PENDIENTE** |
-| A3 | **PENDIENTE** | Validar potencia de la explosión. | **PENDIENTE** |
+| A2 | Yamil Padilla (`Yamil-Padilla`) | `POST /api/explosiones`: params de la explosión (radio entre 0 y 100); 422 si son inválidos. | `https://github.com/Yamil-Padilla/yp-taller-git-2026` · <http://localhost:8081/v3/api-docs> |
+| A3 | Javier Atlasovich (`javifacha123`) | `POST /api/reglas/onda-expansiva`: daño `ceil(p × (r + 1 − d) / (r + 1))`; 400 `REGLA_RECHAZADA` si la onda no alcanza. | `https://github.com/javifacha123/ja-taller-git-2026` · <http://localhost:8082/v3/api-docs> |
 
-El consumo usa `WebClient` y esta parametrizado; los stubs locales son solo reemplazos temporales:
+Cada cuerpo se armó leyendo el OpenAPI del compañero; no se interpreta un JSON distinto por compañero:
+
+| Compañero | Cuerpo que envía A1 | Respuesta que exige A1 |
+|---|---|---|
+| A2 | `{"x":0.0,"y":0.0,"z":0.0,"radio":6.0}` | 200 `{"x","y","z","radio","danioMaximo","totalAfectados","afectados":[]}` o 422 `ProblemDetail` con `detail`, `status`, `title` e `instance`. |
+| A3 | `{"potencia":6,"radio":6,"distancia":2.0}` | 200 `{"regla":"onda-expansiva","aceptada":true,"danioCalculado","bloquesNecesarios","motivo"}` o 400 con `error`, `estado`, `mensaje`, `excepcion`, `ruta` y `momento`. |
+
+Si el estado o los campos no son los del contrato, `ReglaExternaClient` lanza `IntegracionExternaException` y el handler responde `FALLO_A2` o `FALLO_A3` (502): no hay aceptación "por defecto" ni lectura de alias de campos.
+
+El consumo usa `WebClient` y está parametrizado; con los tres servicios en la misma máquina:
 
 ```bash
-A2_BASE_URL='https://a2.example.edu/api' A2_VALIDATE_PATH='/validaciones/escudos' \
-A3_BASE_URL='https://a3.example.edu/api' A3_VALIDATE_PATH='/validaciones/potencia' \
+A2_BASE_URL='http://localhost:8081' A2_VALIDATE_PATH='/api/explosiones' \
+A3_BASE_URL='http://localhost:8082' A3_VALIDATE_PATH='/api/reglas/onda-expansiva' \
 ./mvnw spring-boot:run
 ```
 
-Los rechazos devuelven `400` con `RECHAZO_A2` o `RECHAZO_A3` y no escriben en la base. Un fallo de comunicación devuelve `502` con `FALLO_A2` o `FALLO_A3`. Verificacion: `./mvnw test` → 18 tests, 0 fallos, 0 errores. El escenario se prueba con `POST /minecraft/escenarios/explosion-validada` y `GET /minecraft/escenarios` (OpenAPI en `/v3/api-docs`).
+Los rechazos devuelven `400` con `RECHAZO_A2` o `RECHAZO_A3` y no escriben en la base. Un fallo de comunicación o de formato devuelve `502` con `FALLO_A2` o `FALLO_A3`. Verificación: `./mvnw test` → 31 tests, 0 fallos, 0 errores. El escenario se prueba con `POST /minecraft/escenarios/explosion-validada` y `GET /minecraft/escenarios` (OpenAPI en `/v3/api-docs`).
 
 ### Respuestas a "Qué hay que pensar" (POO-09)
 
-- **OpenAPI:** el documento propio está en <http://localhost:8080/v3/api-docs> (Swagger UI en `/swagger-ui.html`). Describe el CRUD, la simulación, los errores de las dos reglas y el escenario A2/A3 con sus códigos `RECHAZO_*` y `FALLO_*`; un compañero lo puede importar sin abrir el `.java`.
-- **Grupo:** la tabla de arriba muestra A1 (este servicio), A2 (escudos) y A3 (potencia). A2 y A3 siguen **PENDIENTE** hasta que el grupo informe sus nombres, URLs y OpenAPI; las reglas que se consultan son, respectivamente, «el jugador tiene escudos suficientes» y «la potencia está dentro de lo permitido».
+- **OpenAPI:** el documento propio está en <http://localhost:8080/v3/api-docs> (Swagger UI en `/swagger-ui.html`). Describe el CRUD, la simulación, las dos reglas publicadas para los compañeros y el escenario A2/A3 con sus códigos `RECHAZO_*` y `FALLO_*`; un compañero lo puede importar sin abrir el `.java`.
+- **Grupo:** la tabla de arriba muestra A1 (este servicio), A2 (Yamil Padilla) y A3 (Javier Atlasovich), con los tres OpenAPI y la regla de cada uno en una frase.
 - **Escenario:** un Creeper de A1 explota contra un jugador con escudos. Necesita las dos validaciones ajenas; si ambas aceptan se guarda una `Jugada` y un `GET /minecraft/escenarios` la muestra. Si A2 o A3 rechaza, la base queda igual y el error nombra al compañero.
-- **Cliente:** `ReglaExternaClient` usa `WebClient` y lee las URLs de `application.properties` o de las variables `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL`, `A3_VALIDATE_PATH` y `INTEGRACION_TIMEOUT_SECONDS`. Mientras no estén los OpenAPI reales se usan los stubs locales.
-- **Errores:** el cliente traduce las respuestas de A2 y A3 a la jerarquía propia. `GlobalExceptionHandler` distingue `RECHAZO_A2` de `RECHAZO_A3` (400) y `FALLO_A2` de `FALLO_A3` (502), con `timestamp`, `status`, `codigo`, `mensaje` y `path`.
-- **Límite:** no se clonó código de A2 ni de A3; se trabaja solo con el OpenAPI y las reglas escritas. Si el documento no alcanza, se pide al autor que lo complete (los pendientes están en [`docs/POO09-APLICADO.md`](docs/POO09-APLICADO.md)).
+- **Cliente:** `ReglaExternaClient` usa `WebClient` y lee las URLs de `application.properties` o de las variables `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL`, `A3_VALIDATE_PATH` y `INTEGRACION_TIMEOUT_SECONDS`. A2 recibe su cuerpo de explosión y A3 el de onda expansiva, según sus OpenAPI.
+- **Errores:** el cliente exige el formato publicado por cada compañero y traduce los rechazos a la jerarquía propia. `GlobalExceptionHandler` distingue `RECHAZO_A2` de `RECHAZO_A3` (400) y `FALLO_A2` de `FALLO_A3` (502), con `timestamp`, `status`, `codigo`, `mensaje` y `path`.
+- **Límite:** no se copió código de A2 ni de A3: los cuerpos y las validaciones salen de sus OpenAPI y de sus reglas escritas. El detalle está en [`docs/POO09-APLICADO.md`](docs/POO09-APLICADO.md).
 
 ### Cierre de las observaciones de POO-08
 
@@ -932,7 +994,7 @@ No tengo el documento de corrección. Se cierran una por una las observaciones c
 
 Archivo: [`insomnia/minecraft-insomnia.json`](insomnia/minecraft-insomnia.json). Guía de importación y orden (también en [`RUN.md`](RUN.md)):
 
-**Importar:** abrí Insomnia, elegí *Import* y luego *From File*, y seleccioná el archivo. Se crea la colección "Minecraft - POO-08" con un entorno (*Base Environment*) que define `base_url` y los ids `jugador_id`, `monstruo_id`, `animal_id` e `id_inexistente`.
+**Importar:** abrí Insomnia, elegí *Import* y luego *From File*, y seleccioná el archivo. Se crea la colección "Minecraft - POO-08" con un entorno (*Base Environment*) que define `base_url`, los ids `jugador_id`, `monstruo_id`, `animal_id` e `id_inexistente`, y las URLs/paths de A2 (`http://localhost:8081`, `/api/explosiones`) y A3 (`http://localhost:8082`, `/api/reglas/onda-expansiva`). Guía rápida: [`insomnia/README.md`](insomnia/README.md).
 
 **Orden de ejecución** (arrancando con la carpeta `data/` borrada, los ids serán 1, 2 y 3):
 
@@ -944,17 +1006,20 @@ Archivo: [`insomnia/minecraft-insomnia.json`](insomnia/minecraft-insomnia.json).
 6. `05 - Entidad muerta (no revive, no actúa)`: regresión del bug corregido. `PATCH` y `PUT` con vida 20 sobre el Creeper devuelven 409 `ENTIDAD_MUERTA` y un `GET` posterior sigue mostrando `vida: 0`; `/acciones` y `/explosivos` ya no listan al muerto; `POST` con vida 0, `PUT` sin vida y `PATCH` con vida 0 devuelven 400.
 7. `06 - DELETE`: borra la vaca y confirma el 404.
 
-La simulación de POO-09 (A2 → A3 → jugada persistida) se prueba con los endpoints `/minecraft/escenarios/explosion-validada` y `/minecraft/escenarios`, documentados en `/v3/api-docs`.
+8. `08 - Escenario cruzado A1 + A2 + A3 (POO-09)`: con A2 en `8081` y A3 en `8082`, crear jugador con escudos y Creeper vivo, ejecutar el caso feliz, ver la jugada persistida y después forzar un rechazo de A2 (`radio: 0.0`) y otro de A3 (`distancia: 14.14`, `radio: 3.0`).
+9. `09 - Contratos directos y reglas propias (POO-09)`: llama a A2, A3 y a `/minecraft/reglas/danio-caida` y `/minecraft/reglas/absorcion-escudo`. Las respuestas verificadas están en [`insomnia/respuestas-ejemplo.md`](insomnia/respuestas-ejemplo.md).
+
+La simulación de POO-09 (A2 → A3 → jugada persistida) también se prueba con los endpoints `/minecraft/escenarios/explosion-validada` y `/minecraft/escenarios`, documentados en `/v3/api-docs`.
 
 ## Estructura del proyecto
 
 - `domain`: entidades, `Explosivo`, `Explosion` y la nueva entidad `Jugada`.
 - `repository`: `EntidadVivaRepository` y `JugadaRepository`.
-- `service` / `service.impl`: lógica, validaciones, transacciones y el nuevo `EscenarioService` (A2 → A3 → simulación → persistencia).
+- `service` / `service.impl`: lógica, validaciones, transacciones, `EscenarioService` (A2 → A3 → simulación → persistencia) y `ReglaService` (daño de caída y absorción de escudos).
 - `integration`: `ReglaExternaClient` y el enum `Companero` para consumir A2 y A3 con `WebClient`.
 - `config`: `OpenApiConfig` (springdoc) y `WebClientConfig` (timeouts).
 - `exception`: jerarquía de excepciones, `ErrorResponse` y `GlobalExceptionHandler`, que traduce todo a HTTP (incluye los códigos `RECHAZO_*` y `FALLO_*`).
-- `rest.controller`: controllers HTTP, con `EscenarioController` y los stubs temporales `ValidacionStubController`. `rest.dto`: cuerpos de entrada y salida.
+- `rest.controller`: controllers HTTP, con `EscenarioController` y `ReglaController` (daño de caída y absorción de escudos). `rest.dto`: cuerpos de entrada y salida.
 
 ## Licencia
 

@@ -16,6 +16,7 @@ public final class MinecraftConstants {
     // Jugador
     public static final int HAMBRE_MAXIMA = 20;
     public static final int ESCUDO_ABSORCION = 5;
+    public static final double ALTURA_SEGURA_CAIDA = 3.0;
     public static final int PODER_EXPLOSIVO_POR_TNT = 4;
     public static final String ITEM_ESCUDO = "escudo";
     public static final String ITEM_TNT = "TNT";

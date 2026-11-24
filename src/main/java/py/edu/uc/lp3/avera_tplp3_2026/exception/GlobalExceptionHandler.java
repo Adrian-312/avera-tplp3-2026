@@ -33,6 +33,12 @@ public class GlobalExceptionHandler {
         return respuesta(HttpStatus.CONFLICT, ex, request);
     }
 
+    @ExceptionHandler(ReglaRechazadaException.class)
+    public ResponseEntity<ErrorResponse> handleReglaRechazada(ReglaRechazadaException ex,
+                                                              HttpServletRequest request) {
+        return respuesta(HttpStatus.BAD_REQUEST, ex, request);
+    }
+
     @ExceptionHandler(RechazoExternoException.class)
     public ResponseEntity<ErrorResponse> handleRechazoExterno(RechazoExternoException ex,
                                                               HttpServletRequest request) {

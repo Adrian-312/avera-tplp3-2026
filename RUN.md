@@ -64,9 +64,13 @@ La base se guarda en la carpeta `data/` (no se sube a Git). Para empezar de cero
      "base_url": "http://localhost:8080",
      "jugador_id": 1,
      "monstruo_id": 2,
-     "animal_id": 3,
-     "id_inexistente": 9999
-   }
+      "animal_id": 3,
+      "id_inexistente": 9999,
+      "a2_base_url": "http://localhost:8081",
+      "a3_base_url": "http://localhost:8082",
+      "a2_path": "/api/explosiones",
+      "a3_path": "/api/reglas/onda-expansiva"
+    }
    ```
 4. Ejecutá las carpetas **en orden**, con **Send**:
    - `00 - Estado del servicio`
@@ -77,7 +81,7 @@ La base se guarda en la carpeta `data/` (no se sube a Git). Para empezar de cero
     - `05 - Entidad muerta (no revive, no actúa)`: 409 `ENTIDAD_MUERTA` al intentar revivir con `PATCH`/`PUT`; el Creeper sigue en vida 0 y desaparece de `/acciones` y `/explosivos`; 400 para `POST` con vida 0, `PUT` sin vida y `PATCH` con vida 0.
     - `06 - DELETE`: 204 y luego 404.
 
-Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se espera.
+Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se espera. Las carpetas `08` y `09` son de POO-09: requieren A2 y A3 arriba en `8081`/`8082` y ejercitan el happy path, un rechazo de cada compañero y las reglas propias de A1.
 
 ## 6. Probar POO-09 (APIs cruzadas)
 
@@ -95,7 +99,7 @@ Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se esp
 
 4. Probá en este orden: escenario feliz (`jugadorId = 1`, `monstruoId = 2`, `potencia = 6`) → `201`; rechazo de A2 (`jugadorId = 3`, `monstruoId = 4`, `potencia = 6`) → `400 RECHAZO_A2`; crear un jugador con 1 escudo (id 5) y rechazo de A3 (`jugadorId = 5`, `monstruoId = 4`, `potencia = 10`) → `400 RECHAZO_A3`; `GET /minecraft/escenarios` → un solo elemento. El monstruo de los rechazos sigue vivo porque un rechazo no ejecuta la simulación.
 5. En la consola H2 aparece también la tabla `JUGADA` con las jugadas aceptadas.
-6. Los stubs locales se cambian por los compañeros reales con `A2_BASE_URL`, `A2_VALIDATE_PATH`, `A3_BASE_URL` y `A3_VALIDATE_PATH`. El detalle está en `docs/POO09-APLICADO.md`.
+6. Los clientes apuntan a los compañeros reales con `A2_BASE_URL=http://localhost:8081`, `A2_VALIDATE_PATH=/api/explosiones`, `A3_BASE_URL=http://localhost:8082` y `A3_VALIDATE_PATH=/api/reglas/onda-expansiva`. El detalle está en `docs/POO09-APLICADO.md`.
 
 ## Problemas comunes
 

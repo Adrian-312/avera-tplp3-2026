@@ -1,5 +1,7 @@
 package py.edu.uc.lp3.avera_tplp3_2026.service.impl;
 
+import static py.edu.uc.lp3.avera_tplp3_2026.constants.MinecraftConstants.ITEM_ESCUDO;
+
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -64,13 +66,24 @@ public class EscenarioServiceImpl implements EscenarioService {
         if (!jugador.isVivo() || !monstruo.isVivo()) {
             throw new EntidadInvalidaException("El jugador y el monstruo deben estar vivos antes del escenario");
         }
+        if (!monstruo.isHostil()) {
+            throw new EntidadInvalidaException("El monstruo " + monstruo.getNombre() + " no es hostil");
+        }
+        if (request.potencia() <= 0 || request.potencia() > monstruo.getPotenciaExplosiva()) {
+            throw new EntidadInvalidaException("La potencia debe estar entre 1 y "
+                    + monstruo.getPotenciaExplosiva() + " para " + monstruo.getNombre());
+        }
 
+        double radio = request.radio() != null ? request.radio() : request.potencia();
+        double distancia = request.distancia() != null
+                ? request.distancia()
+                : Math.abs(jugador.getAltura() - monstruo.getAltura());
         int escudos = (int) jugador.getInventario().stream()
-                .filter(item -> item.equalsIgnoreCase("escudo"))
+                .filter(item -> item.equalsIgnoreCase(ITEM_ESCUDO))
                 .count();
         ValidacionExternaRequest payload = new ValidacionExternaRequest(
                 jugador.getNombre(), jugador.getVida(), escudos, monstruo.getNombre(),
-                request.potencia(), "explosion-validada");
+                request.potencia(), radio, distancia, "explosion-validada");
 
         ValidacionExternaResponse decisionA2 = reglaExternaClient.validar(Companero.A2, payload);
         if (!decisionA2.aceptada()) {

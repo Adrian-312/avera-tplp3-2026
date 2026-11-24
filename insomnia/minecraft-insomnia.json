@@ -10,7 +10,7 @@
       "modified": 1794225600000,
       "created": 1794225600000,
       "name": "Minecraft - POO-08",
-      "description": "CRUD de entidades vivas, explosivos y simulación de explosión. La muerte es un estado final: una entidad muerta no revive ni realiza acciones.",
+      "description": "CRUD de entidades vivas, explosivos y simulación de explosión. La muerte es un estado final: una entidad muerta no revive ni realiza acciones. La carpeta 08 ejercita POO-09 con A2 en 8081 y A3 en 8082.",
       "scope": "collection",
       "_type": "workspace"
     },
@@ -26,8 +26,10 @@
         "monstruo_id": 2,
         "animal_id": 3,
         "id_inexistente": 9999,
-        "a2_base_url": "http://localhost:8080/integracion/stub/a2",
-        "a3_base_url": "http://localhost:8080/integracion/stub/a3"
+        "a2_base_url": "http://localhost:8081",
+        "a3_base_url": "http://localhost:8082",
+        "a2_path": "/api/explosiones",
+        "a3_path": "/api/reglas/onda-expansiva"
       },
       "dataPropertyOrder": {
         "&": [
@@ -37,7 +39,9 @@
           "animal_id",
           "id_inexistente",
           "a2_base_url",
-          "a3_base_url"
+          "a3_base_url",
+          "a2_path",
+          "a3_path"
         ]
       },
       "color": null,
@@ -1165,7 +1169,7 @@
       "modified": 1794225600000,
       "created": 1794225600000,
       "name": "08 - Escenario cruzado A1 + A2 + A3 (POO-09)",
-      "description": "Ejecutar con jugador y monstruo vivos creados. Recordar guardar respuestas de ejemplo tras probar con el grupo.",
+      "description": "POO-09 con A2 (Yamil, 8081) y A3 (Javier, 8082). Ejecutar con jugador y monstruo vivos creados; las respuestas de ejemplo están en insomnia/respuestas-ejemplo.md.",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": -950000,
@@ -1240,7 +1244,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/minecraft/escenarios/explosion-validada",
       "name": "POST escenario feliz (A2 y A3 aceptan -> 201)",
-      "description": "Esperado: 201. A2 y A3 aceptan, A1 ejecuta la explosión y persiste la jugada en H2.",
+      "description": "201 verificado. A2 devuelve 200 con danioMaximo y afectados; A3 devuelve 200 con aceptada=true; A1 ejecuta la explosión y persiste la jugada en H2.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1255,7 +1259,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\",\n  \"potencia\": 6,\n  \"motivo\": \"explosión validada por A2 y A3\"\n}"
+        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\",\n  \"potencia\": 6,\n  \"motivo\": \"explosión validada por A2 y A3\",\n  \"radio\": 6.0,\n  \"distancia\": 2.0\n}"
       },
       "headers": [
         {
@@ -1294,7 +1298,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/minecraft/escenarios/explosion-validada",
       "name": "POST rechazo de A2 -> RECHAZO_A2 (400)",
-      "description": "Esperado: 400 con código RECHAZO_A2. Ajustar los valores del body según la regla real de A2 para forzar su rechazo.",
+      "description": "400 RECHAZO_A2 verificado. radio=0.0 hace que A2 responda 422 ProblemDetail ('El radio debe ser mayor que 0 y como máximo 100'); A1 no consulta A3 ni guarda la jugada.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1309,7 +1313,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\",\n  \"potencia\": 6,\n  \"motivo\": \"forzar rechazo de regla A2\"\n}"
+        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\",\n  \"potencia\": 6,\n  \"motivo\": \"forzar rechazo de regla A2\",\n  \"radio\": 0.0,\n  \"distancia\": 2.0\n}"
       },
       "headers": [
         {
@@ -1348,7 +1352,7 @@
       "created": 1794225600000,
       "url": "{{ _.base_url }}/minecraft/escenarios/explosion-validada",
       "name": "POST rechazo de A3 -> RECHAZO_A3 (400)",
-      "description": "Esperado: 400 con código RECHAZO_A3. Ajustar los valores del body según la regla real de A3 para forzar su rechazo.",
+      "description": "400 RECHAZO_A3 verificado. distancia=14.14 > radio=3.0 hace que A3 responda 400 REGLA_RECHAZADA ('La onda no alcanza'); A1 no guarda la jugada.",
       "method": "POST",
       "parameters": [],
       "authentication": {},
@@ -1363,7 +1367,7 @@
       "_type": "request",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\",\n  \"potencia\": 10,\n  \"motivo\": \"forzar rechazo de regla A3\"\n}"
+        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\",\n  \"potencia\": 10,\n  \"motivo\": \"forzar rechazo de regla A3\",\n  \"radio\": 3.0,\n  \"distancia\": 14.14\n}"
       },
       "headers": [
         {
@@ -1394,6 +1398,235 @@
       "_type": "request",
       "body": {},
       "headers": []
+    },
+    {
+      "_id": "fld_09_contratos_directos",
+      "parentId": "wrk_minecraft",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "name": "09 - Contratos directos y reglas propias (POO-09)",
+      "description": "Llamadas directas a los contratos reales de A2/A3 y a las reglas publicadas por A1. No aceptar otros nombres de campo.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -940000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_090_a2_feliz",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.a2_base_url }}{{ _.a2_path }}",
+      "name": "A2 · POST explosión válida (200)",
+      "description": "200 verificado: x/y/z/radio/eco, danioMaximo, totalAfectados y afectados[].",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -939000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"x\": 0.0,\n  \"y\": 0.0,\n  \"z\": 0.0,\n  \"radio\": 6.0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_091_a2_rechazo",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.a2_base_url }}{{ _.a2_path }}",
+      "name": "A2 · POST radio inválido (422)",
+      "description": "422 verificado: ProblemDetail con detail='El radio debe ser mayor que 0 y como máximo 100'.",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -938000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"x\": 0.0,\n  \"y\": 0.0,\n  \"z\": 0.0,\n  \"radio\": 0.0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_092_a3_feliz",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.a3_base_url }}{{ _.a3_path }}",
+      "name": "A3 · POST onda aceptada (200)",
+      "description": "200 verificado: regla='onda-expansiva', aceptada=true, danioCalculado, bloquesNecesarios y motivo.",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -937000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"potencia\": 6,\n  \"radio\": 6,\n  \"distancia\": 2.0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_093_a3_rechazo",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.a3_base_url }}{{ _.a3_path }}",
+      "name": "A3 · POST fuera del radio (400)",
+      "description": "400 verificado: error=REGLA_RECHAZADA, estado=400, mensaje='La onda no alcanza...'.",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -936000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"potencia\": 12,\n  \"radio\": 3,\n  \"distancia\": 14.14\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_094_a1_caida",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.base_url }}/minecraft/reglas/danio-caida",
+      "name": "A1 · POST daño por caída (200)",
+      "description": "200: 5 bloques caídos desde 10 hasta 5 => danioCalculado=2.",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -935000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"alturaInicial\": 10.0,\n  \"alturaFinal\": 5.0,\n  \"danioDeclarado\": 2\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_095_a1_caida_rechazo",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.base_url }}/minecraft/reglas/danio-caida",
+      "name": "A1 · POST daño declarado incorrecto (400)",
+      "description": "400 REGLA_RECHAZADA: el daño calculado es 2, no 3.",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -934000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"alturaInicial\": 10.0,\n  \"alturaFinal\": 5.0,\n  \"danioDeclarado\": 3\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_096_a1_escudos",
+      "parentId": "fld_09_contratos_directos",
+      "modified": 1794225600000,
+      "created": 1794225600000,
+      "url": "{{ _.base_url }}/minecraft/reglas/absorcion-escudo",
+      "name": "A1 · POST absorción de escudos (200)",
+      "description": "200: potencia 12 y 3 escudos => escudosConsumidos=3, danioCalculado=0.",
+      "method": "POST",
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": -933000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"potencia\": 12,\n  \"escudosDisponibles\": 3,\n  \"danioDeclarado\": 0\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
   ]
 }

@@ -16,7 +16,7 @@ import py.edu.uc.lp3.avera_tplp3_2026.service.SimulacionService;
 // El controller solo recibe el pedido HTTP, llama al service y devuelve la respuesta.
 @RestController
 @RequestMapping("/minecraft/simulacion")
-@Tag(name = "Simulación de explosiones", description = "Dos reglas del juego: el monstruo hostil se autodestruye y cada escudo del jugador absorbe 5 puntos de la onda.")
+@Tag(name = "Simulación de explosiones", description = "Regla del juego que ya publica A1: un monstruo hostil detona y cada escudo del jugador absorbe 5 puntos de la onda.")
 public class SimulacionController {
 
     private final SimulacionService service;
@@ -29,7 +29,8 @@ public class SimulacionController {
     @Operation(summary = "Simular explosión", description = "Aplica la onda a todas las entidades guardadas y persiste las nuevas vidas y los escudos consumidos. Tras morir, el Creeper queda en vida 0 y ya no puede explotar.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Simulación persistida; el cuerpo trae el estado de cada entidad"),
-            @ApiResponse(responseCode = "400", description = "ENTIDAD_INVALIDA: monstruo muerto, no hostil o potencia fuera de rango"),
+            @ApiResponse(responseCode = "400", description = "ENTIDAD_INVALIDA: monstruo no hostil o potencia fuera de rango"),
+            @ApiResponse(responseCode = "409", description = "ENTIDAD_MUERTA: el monstruo ya explotó"),
             @ApiResponse(responseCode = "404", description = "ENTIDAD_NO_ENCONTRADA")
     })
     public SimulacionResponse explosion(@RequestBody ExplosionRequest request) {

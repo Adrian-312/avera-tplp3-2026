@@ -12,10 +12,10 @@
 | Grupo | Integrante | Responsabilidad en el escenario | Repositorio | Endpoint base | OpenAPI |
 |---|---|---|---|---|---|
 | A1 | Adrián Vera (`Adrian-312`) | Dueño del escenario; consulta a A2 y A3, simula la explosión y persiste la jugada. | `https://github.com/Adrian-312/avera-tplp3-2026` | `http://localhost:8080` | `http://localhost:8080/v3/api-docs` |
-| A2 | **PENDIENTE** | Validación de escudos del jugador antes de la explosión. | **PENDIENTE** | **PENDIENTE** | **PENDIENTE** |
-| A3 | **PENDIENTE** | Validación de potencia de la explosión. | **PENDIENTE** | **PENDIENTE** | **PENDIENTE** |
+| A2 | Yamil Padilla (`Yamil-Padilla`) | Valida los parámetros de la explosión antes de la jugada. | `https://github.com/Yamil-Padilla/yp-taller-git-2026` | `http://localhost:8081` | `http://localhost:8081/v3/api-docs` |
+| A3 | Javier Atlasovich (`javifacha123`) | Valida el daño de la onda expansiva sobre la entidad alcanzada. | `https://github.com/javifacha123/ja-taller-git-2026` | `http://localhost:8082` | `http://localhost:8082/v3/api-docs` |
 
-A1 construyó el escenario completo y dejó los consumos de A2 y A3 parametrizados. A2 y A3 se completan cuando el grupo informe sus URLs y contratos.
+A1 construyó el escenario completo y dejó los consumos de A2 y A3 parametrizados. Los cuerpos y los formatos de respuesta se tomaron de los OpenAPI reales de los compañeros; no hay aceptación tolerante ni alias de campos.
 
 Tecnologías usadas por A1: Spring Boot 4.1.1, Java 21, Spring WebMVC, Spring WebFlux (`WebClient`), Spring Data JPA, H2 y springdoc-openapi 3.2.0.
 
@@ -23,11 +23,13 @@ Tecnologías usadas por A1: Spring Boot 4.1.1, Java 21, Spring WebMVC, Spring We
 
 Un **Creeper de A1** explota contra un jugador que lleva escudos. Antes de aplicar la explosión:
 
-1. **A2** verifica que el jugador tenga escudos suficientes.
-2. **A3** verifica que la potencia solicitada esté dentro de lo permitido.
+1. **A2** valida los parámetros geométricos de la explosión (`x`, `y`, `z`, `radio`) y responde con el daño máximo y las entidades afectadas.
+2. **A3** valida la onda expansiva (`potencia`, `radio`, `distancia`) y responde si la regla es aceptada, el daño calculado y los bloques necesarios.
 3. Solo si ambos aceptan, **A1** simula la explosión con `SimulacionService` y guarda una `Jugada` en H2.
 
 El orden de consulta es A2 → A3. Si A2 rechaza, no se consulta A3. Cualquier rechazo ocurre antes de escribir, por lo que no se crea ninguna jugada. Si la simulación local falla, la transacción `@Transactional` hace rollback de la jugada.
+
+Además del escenario cruzado, A1 publica dos reglas de juego propias: **daño por caída** (los primeros 3 bloques no hacen daño; desde el cuarto, 1 punto por bloque) y **absorción de escudos** (cada escudo absorbe 5 puntos). Ambas devuelven el mismo formato `VeredictoRegla` y rechazan con `400 REGLA_RECHAZADA` cuando el daño declarado no coincide con el calculado.
 
 ## 3. Endpoint propio de A1
 
@@ -38,7 +40,9 @@ El orden de consulta es A2 → A3. Si A2 rechaza, no se consulta A3. Cualquier r
   "jugadorId": 1,
   "monstruoId": 2,
   "potencia": 6,
-  "motivo": "explosión válida"
+  "motivo": "explosión válida",
+  "radio": 6.0,
+  "distancia": 2.0
 }
 ```
 
@@ -64,44 +68,107 @@ Devuelve el historial de jugadas persistidas. Incluye nombres, potencia, escudos
 
 ## 4. Contrato enviado a A2 y A3
 
-A1 envía el mismo cuerpo a ambos compañeros:
+Los cuerpos se tomaron de los OpenAPI reales (`/v3/api-docs` de cada servicio) y son distintos. No se aceptan alias ni formatos alternativos: si falta un campo obligatorio, cambia el tipo, el `status` no coincide o el JSON es ilegible, `ReglaExternaClient` lanza `IntegracionExternaException` y A1 responde `502 FALLO_A2` o `502 FALLO_A3`.
+
+### A2 — Yamil Padilla
+
+`POST http://localhost:8081/api/explosiones`
 
 ```json
 {
-  "jugador": "SteveA1",
-  "vidaJugador": 20,
-  "escudosDisponibles": 2,
-  "monstruo": "CreeperFeliz",
-  "potencia": 6,
-  "escenario": "explosion-validada"
+  "x": 0.0,
+  "y": 0.0,
+  "z": 0.0,
+  "radio": 6.0
 }
 ```
 
-A1 interpreta como aceptación cualquiera de estos nombres de campo: `aceptada`, `acepta`, `aceptado`, `aprobado`, `valido`, `valida` u `ok`. Como código y mensaje acepta `codigo`/`code`/`resultado` y `mensaje`/`motivo`/`razon`/`message`. Si la respuesta no es JSON, se considera fallo de comunicación.
+Aceptación (`200`), campos obligatorios:
 
-### Reglas de los stubs locales (temporales)
+```json
+{
+  "x": 0.0,
+  "y": 0.0,
+  "z": 0.0,
+  "radio": 6.0,
+  "danioMaximo": 20.0,
+  "totalAfectados": 0,
+  "afectados": []
+}
+```
 
-| Compañero | Ruta local | Regla | Código de rechazo |
-|---|---|---|---|
-| A2 | `/integracion/stub/a2/validar` | `escudosDisponibles >= ${integracion.stub.a2.escudos-minimos}` (default `1`) | `SIN_ESCUDO` |
-| A3 | `/integracion/stub/a3/validar` | `potencia <= ${integracion.stub.a3.potencia-maxima}` (default `8`) | `POTENCIA_ALTA` |
+Rechazo (`422`, `ProblemDetail`), campos obligatorios:
 
-### Datos reales pendientes del grupo
+```json
+{
+  "type": "about:blank",
+  "title": "Unprocessable Content",
+  "status": 422,
+  "detail": "El radio debe ser mayor que 0 y como máximo 100",
+  "instance": "/api/explosiones"
+}
+```
 
-- Nombre e integrante de A2 y A3.
-- URLs base y paths reales de validación.
-- OpenAPI real de cada compañero y campos exactos de su contrato.
-- Códigos de rechazo y autenticación, si la hubiera.
-- Regla de negocio definitiva de cada compañero.
+A1 traduce el rechazo a `400 RECHAZO_A2` (código externo `HTTP_422`).
+
+### A3 — Javier Atlasovich
+
+`POST http://localhost:8082/api/reglas/onda-expansiva`
+
+```json
+{
+  "potencia": 6,
+  "radio": 6,
+  "distancia": 2.0
+}
+```
+
+Aceptación (`200`), campos obligatorios:
+
+```json
+{
+  "regla": "onda-expansiva",
+  "aceptada": true,
+  "danioCalculado": 5,
+  "bloquesNecesarios": null,
+  "motivo": "A 2.0 bloques de un explosivo de potencia 6 y radio 6 corresponden 5 de daño"
+}
+```
+
+Rechazo (`400`), campos obligatorios:
+
+```json
+{
+  "error": "REGLA_RECHAZADA",
+  "excepcion": "ReglaRechazadaException",
+  "estado": 400,
+  "mensaje": "La regla 'onda-expansiva' rechazó la jugada: La onda no alcanza: la distancia 14.14 es mayor que el radio 3, así que no corresponde daño",
+  "ruta": "/api/reglas/onda-expansiva",
+  "momento": "2026-11-22T12:00:00Z"
+}
+```
+
+A1 traduce el rechazo a `400 RECHAZO_A3` (código externo `REGLA_RECHAZADA`).
+
+### Reglas propias publicadas por A1
+
+A1 publica sus propias reglas con un único formato de respuesta, `VeredictoRegla`: `regla`, `aceptada`, `potencia`, `potenciaMaxima`, `escudosDisponibles`, `escudosConsumidos`, `danioCalculado`, `bloquesCaidos` y `motivo`.
+
+| Endpoint | Entrada | Regla |
+|---|---|---|
+| `POST /minecraft/reglas/danio-caida` | `alturaInicial`, `alturaFinal`, `danioDeclarado` | 3 bloques seguros; desde el cuarto, 1 punto por bloque. |
+| `POST /minecraft/reglas/absorcion-escudo` | `potencia`, `escudosDisponibles`, `danioDeclarado` | Cada escudo absorbe 5 puntos. |
+
+Ejemplo de daño por caída: caer de la altura `10` a la `5` son 5 bloques, por lo que el daño calculado es `2`. Si `danioDeclarado` es `3`, A1 responde `400 REGLA_RECHAZADA`.
 
 ## 5. Mapeo de errores
 
 | Situación | `codigo` | HTTP | Mensaje |
 |---|---|---|---|
-| A2 rechaza | `RECHAZO_A2` | 400 | `Rechazo de A2: ...` |
-| A3 rechaza | `RECHAZO_A3` | 400 | `Rechazo de A3: ...` |
-| A2 no responde o responde inválido | `FALLO_A2` | 502 | `Fallo al consultar A2: ...` |
-| A3 no responde o responde inválido | `FALLO_A3` | 502 | `Fallo al consultar A3: ...` |
+| A2 rechaza (`422`), o falta/cambia un campo obligatorio | `RECHAZO_A2` / `FALLO_A2` | 400 / 502 | `Rechazo de A2: ...` / `Fallo al consultar A2: ...` |
+| A3 rechaza (`400`), o falta/cambia un campo obligatorio | `RECHAZO_A3` / `FALLO_A3` | 400 / 502 | `Rechazo de A3: ...` / `Fallo al consultar A3: ...` |
+| Regla propia con daño declarado distinto del calculado | `REGLA_RECHAZADA` | 400 | `Con ... el daño es ...` |
+| JSON ilegible en una regla propia | `CUERPO_ILEGIBLE` | 400 | `El cuerpo de la petición no es un JSON válido` |
 | Entidad muerta en POO-08 | `ENTIDAD_MUERTA` | 409 | handler ya existente |
 
 Todas las respuestas de error incluyen `timestamp`, `status`, `codigo`, `mensaje` y `path`.
@@ -114,35 +181,34 @@ Solo se guarda después de que A2 y A3 aceptan y la simulación termina correcta
 
 ## 7. Cómo se probó
 
-- `./mvnw test`: 18 tests, 0 fallos, 0 errores.
-- Nuevos tests del escenario: camino feliz, rechazo de A2, rechazo de A3 y persistencia condicional con un jugador extra.
-- Levantamiento con H2 en memoria y recorrido completo del escenario desde `/v3/api-docs` (Swagger UI), según el paso 6 de [`RUN.md`](../RUN.md).
-- La colección de Insomnia del repositorio es `insomnia/minecraft-insomnia.json` (POO-08); el escenario de POO-09 se prueba con los endpoints documentados en el OpenAPI propio.
-- IMPORTANTE: el arranque de prueba usa `jdbc:h2:mem:...`; no modifica `./data/minecraft`.
+- `./mvnw test`: 31 tests (26 de integración, 4 de dominio y 1 de arranque), 0 fallos, 0 errores.
+- Tests del escenario: camino feliz, rechazo de A2, rechazo de A3, persistencia condicional con un jugador extra y campos `radio`/`distancia` enviados a cada compañero.
+- Tests estrictos de integración con un `HttpServer` local: cuerpo exacto enviado, campos obligatorios presentes, campos faltantes o con tipo incorrecto, `status`/`estado` coherentes y rechazos traducidos a excepciones de A1.
+- Tests de reglas propias: daño por caída, absorción de escudos y daño declarado incorrecto.
+- Los OpenAPI reales se verificaron levantando A2 en `8081` y A3 en `8082`; los ejemplos de este documento son las respuestas observadas, no suposiciones.
+- La colección de Insomnia del repositorio es `insomnia/minecraft-insomnia.json` (POO-08); POO-09 se prueba con los endpoints documentados en `/v3/api-docs` y con los tests de integración.
+- IMPORTANTE: los tests usan H2 en memoria; no modifican `./data/minecraft`.
 
-## 8. Configuración para reemplazar los stubs
+## 8. Configuración de los compañeros reales
 
 | Variable | Default | Uso |
 |---|---|---|
-| `A2_BASE_URL` | `http://localhost:8080/integracion/stub` | URL base de A2. |
-| `A2_VALIDATE_PATH` | `/a2/validar` | Path de validación de A2. |
-| `A3_BASE_URL` | `http://localhost:8080/integracion/stub` | URL base de A3. |
-| `A3_VALIDATE_PATH` | `/a3/validar` | Path de validación de A3. |
+| `A2_BASE_URL` | `http://localhost:8081` | URL base de A2. |
+| `A2_VALIDATE_PATH` | `/api/explosiones` | Path de validación de explosiones de A2. |
+| `A3_BASE_URL` | `http://localhost:8082` | URL base de A3. |
+| `A3_VALIDATE_PATH` | `/api/reglas/onda-expansiva` | Path de la regla de onda expansiva de A3. |
 | `INTEGRACION_TIMEOUT_SECONDS` | `5` | Timeout de `WebClient`. |
 
-Ejemplo con compañeros reales:
+Ejemplo con los servicios reales corriendo:
 
 ```bash
-A2_BASE_URL='https://a2.example.edu/api' \
-A2_VALIDATE_PATH='/validaciones/escudos' \
-A3_BASE_URL='https://a3.example.edu/api' \
-A3_VALIDATE_PATH='/validaciones/potencia' \
+A2_BASE_URL='http://localhost:8081' \
+A2_VALIDATE_PATH='/api/explosiones' \
+A3_BASE_URL='http://localhost:8082' \
+A3_VALIDATE_PATH='/api/reglas/onda-expansiva' \
 ./mvnw spring-boot:run
 ```
 
 ## 9. Pendientes que no dependen de A1
 
-1. Completar la tabla del apartado 1 con los datos reales de A2 y A3.
-2. Reemplazar los stubs por los OpenAPI reales mediante las variables de entorno.
-3. Ajustar `ReglaExternaClient` solo si los contratos reales usan otros nombres de campo.
-4. Pegar el hash del commit en el enlace del encabezado.
+1. Pegar el hash del commit en el enlace del encabezado.

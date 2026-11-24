@@ -25,7 +25,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("POO-09 - Minecraft (A1)")
                         .version("1.0.0")
-                        .description("CRUD de entidades, simulación de explosiones y escenario cruzado: A1 consulta a A2 y a A3 antes de persistir la jugada en H2.")
+                        .description("CRUD de entidades, simulación de explosiones, las reglas publicadas para los compañeros (daño por caída y absorción de escudos) y el escenario cruzado: A1 consulta a A2 (Yamil Padilla) y a A3 (Javier Atlasovich) antes de persistir la jugada en H2.")
                         .contact(new Contact().name(Contacto.A1).url(Contacto.GITHUB)))
                 .servers(List.of(
                         new Server().url("http://localhost:" + puerto).description("Servicio A1 local"),

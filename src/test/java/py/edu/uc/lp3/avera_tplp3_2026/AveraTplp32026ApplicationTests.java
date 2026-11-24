@@ -11,14 +11,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import py.edu.uc.lp3.avera_tplp3_2026.domain.Animal;
 import py.edu.uc.lp3.avera_tplp3_2026.domain.EntidadViva;
@@ -28,19 +34,29 @@ import py.edu.uc.lp3.avera_tplp3_2026.domain.PersonajeJugable;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadInvalidaException;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadMuertaException;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadNoEncontradaException;
+import py.edu.uc.lp3.avera_tplp3_2026.exception.IntegracionExternaException;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.RechazoExternoException;
+import py.edu.uc.lp3.avera_tplp3_2026.exception.ReglaRechazadaException;
 import py.edu.uc.lp3.avera_tplp3_2026.integration.Companero;
 import py.edu.uc.lp3.avera_tplp3_2026.integration.ReglaExternaClient;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.JugadaRepository;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.AbsorcionEscudoRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.CaidaRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioResponse;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EntidadRequest;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.ValidacionExternaResponse;
+import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.VeredictoRegla;
 import py.edu.uc.lp3.avera_tplp3_2026.service.ComportamientoService;
+import py.edu.uc.lp3.avera_tplp3_2026.service.ReglaService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.EntidadService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.SimulacionService;
 import py.edu.uc.lp3.avera_tplp3_2026.service.impl.EscenarioServiceImpl;
+import tools.jackson.databind.ObjectMapper;
+
+import com.sun.net.httpserver.HttpServer;
 
 // Única clase de prueba del proyecto. Levanta la aplicación completa con una base H2
 // en memoria (no toca la carpeta data/) y comprueba las capas service y repository.
@@ -65,10 +81,43 @@ class ApplicationTest {
     @Autowired
     private ComportamientoService comportamientoService;
 
+    @Autowired
+    private ReglaService reglaService;
+
+    private final List<HttpServer> servidores = new ArrayList<>();
+
     @BeforeEach
     void limpiarBase() {
         jugadaRepository.deleteAll();
         repository.deleteAll();
+    }
+
+    @AfterEach
+    void cerrarServidores() {
+        servidores.forEach(servidor -> servidor.stop(0));
+        servidores.clear();
+    }
+
+    private ReglaExternaClient clienteCon(int status, String cuerpo, AtomicReference<String> recibido)
+            throws IOException {
+        HttpServer servidor = HttpServer.create(new InetSocketAddress(0), 0);
+        servidor.createContext("/", intercambio -> {
+            recibido.set(new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            byte[] bytes = cuerpo.getBytes(StandardCharsets.UTF_8);
+            intercambio.getResponseHeaders().add("Content-Type", "application/json");
+            intercambio.sendResponseHeaders(status, bytes.length);
+            intercambio.getResponseBody().write(bytes);
+            intercambio.close();
+        });
+        servidor.start();
+        servidores.add(servidor);
+        String base = "http://localhost:" + servidor.getAddress().getPort();
+        return new ReglaExternaClient(WebClient.builder(), new ObjectMapper(),
+                base, "/", base, "/", 10);
+    }
+
+    private ValidacionExternaRequest payloadDeValidacion() {
+        return new ValidacionExternaRequest("Steve", 20, 2, "Creeper", 6, 6.0, 2.0, "explosion-validada");
     }
 
     private EscenarioServiceImpl escenarioCon(ReglaExternaClient cliente) {
@@ -104,6 +153,7 @@ class ApplicationTest {
         assertNotNull(entidadService);
         assertNotNull(simulacionService);
         assertNotNull(comportamientoService);
+        assertNotNull(reglaService);
     }
 
     @Test
@@ -131,7 +181,7 @@ class ApplicationTest {
         Monstruo creeper = guardarCreeper();
         simulacionService.simularExplosion(creeper.getId(), 10);
 
-        assertThrows(EntidadInvalidaException.class,
+        assertThrows(EntidadMuertaException.class,
                 () -> simulacionService.simularExplosion(creeper.getId(), 5));
     }
 
@@ -325,5 +375,100 @@ class ApplicationTest {
         assertEquals("A3", ex.getCompanero());
         assertEquals(0, jugadaRepository.count());
         assertEquals(20, repository.findById(creeper.getId()).orElseThrow().getVida());
+    }
+
+    @Test
+    void miReglaDeCaidaCalculaElDanioDespuesDeTresBloques() {
+        VeredictoRegla verdict = reglaService.danioCaida(new CaidaRequest(12.0, 2.0, 7));
+
+        assertTrue(verdict.aceptada());
+        assertEquals(10, verdict.bloquesCaidos());
+        assertEquals(7, verdict.danioCalculado());
+        assertEquals("danio-caida", verdict.regla());
+    }
+
+    @Test
+    void miReglaDeCaidaRechazaDanioDeclaradoIncorrecto() {
+        ReglaRechazadaException ex = assertThrows(ReglaRechazadaException.class,
+                () -> reglaService.danioCaida(new CaidaRequest(12.0, 2.0, 5)));
+
+        assertEquals("REGLA_RECHAZADA", ex.getCodigo());
+    }
+
+    @Test
+    void miRegla2CalculaElDanioDespuesDeLosEscudos() {
+        VeredictoRegla verdict = reglaService.absorcionEscudo(
+                new AbsorcionEscudoRequest(10, 2, 0));
+
+        assertTrue(verdict.aceptada());
+        assertEquals(2, verdict.escudosConsumidos());
+        assertEquals(0, verdict.danioCalculado());
+    }
+
+    @Test
+    void miRegla2RechazaDanioDeclaradoIncorrecto() {
+        ReglaRechazadaException ex = assertThrows(ReglaRechazadaException.class,
+                () -> reglaService.absorcionEscudo(new AbsorcionEscudoRequest(10, 2, 3)));
+
+        assertEquals("REGLA_RECHAZADA", ex.getCodigo());
+    }
+
+    @Test
+    void elClienteA2LeeSoloElFormatoDeSuOpenAPI() throws IOException {
+        AtomicReference<String> recibido = new AtomicReference<>();
+        ReglaExternaClient cliente = clienteCon(200, "{\"aceptada\":true}", recibido);
+
+        assertThrows(IntegracionExternaException.class,
+                () -> cliente.validar(Companero.A2, payloadDeValidacion()));
+        assertTrue(recibido.get().contains("\"radio\""));
+        assertTrue(recibido.get().contains("\"x\""));
+    }
+
+    @Test
+    void elClienteA2AceptaElResultadoDeExplosionYTraduceSuProblema() throws IOException {
+        AtomicReference<String> recibido = new AtomicReference<>();
+        String resultado = "{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"radio\":6.0,\"danioMaximo\":20.0,"
+                + "\"totalAfectados\":0,\"afectados\":[]}";
+        ValidacionExternaResponse decision = clienteCon(200, resultado, recibido)
+                .validar(Companero.A2, payloadDeValidacion());
+        assertTrue(decision.aceptada());
+
+        String problema = "{\"detail\":\"El radio debe ser mayor que 0 y como máximo 100\","
+                + "\"instance\":\"/api/explosiones\",\"status\":422,\"title\":\"Unprocessable Content\"}";
+        RechazoExternoException ex = assertThrows(RechazoExternoException.class,
+                () -> clienteCon(422, problema, new AtomicReference<>())
+                        .validar(Companero.A2, payloadDeValidacion()));
+        assertEquals("HTTP_422", ex.getCodigoExterno());
+        assertEquals(422, ex.getStatusExterno());
+    }
+
+    @Test
+    void elClienteA3ExigeElVeredictoExactoYTraduceSuRechazo() throws IOException {
+        AtomicReference<String> recibido = new AtomicReference<>();
+        String veredicto = "{\"regla\":\"onda-expansiva\",\"aceptada\":true,\"danioCalculado\":5,"
+                + "\"bloquesNecesarios\":null,\"motivo\":\"daño calculado\"}";
+        ValidacionExternaResponse decision = clienteCon(200, veredicto, recibido)
+                .validar(Companero.A3, payloadDeValidacion());
+        assertTrue(decision.aceptada());
+        assertEquals("daño calculado", decision.motivo());
+        assertTrue(recibido.get().contains("\"potencia\""));
+        assertTrue(recibido.get().contains("\"distancia\""));
+
+        String error = "{\"error\":\"REGLA_RECHAZADA\",\"excepcion\":\"ReglaRechazadaException\","
+                + "\"estado\":400,\"mensaje\":\"fuera del radio\",\"ruta\":\"/api/reglas/onda-expansiva\","
+                + "\"momento\":\"2026-11-23T21:22:11-03:00\"}";
+        RechazoExternoException ex = assertThrows(RechazoExternoException.class,
+                () -> clienteCon(400, error, new AtomicReference<>())
+                        .validar(Companero.A3, payloadDeValidacion()));
+        assertEquals("REGLA_RECHAZADA", ex.getCodigoExterno());
+    }
+
+    @Test
+    void unFormatoDeErrorDistintoSeConsideraFalloDeIntegracion() throws IOException {
+        ReglaExternaClient cliente = clienteCon(400, "{\"title\":\"Bad Request\"}", new AtomicReference<>());
+
+        IntegracionExternaException ex = assertThrows(IntegracionExternaException.class,
+                () -> cliente.validar(Companero.A3, payloadDeValidacion()));
+        assertEquals("A3", ex.getCompanero());
     }
 }
