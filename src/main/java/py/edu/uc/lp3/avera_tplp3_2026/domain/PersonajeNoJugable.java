@@ -1,10 +1,12 @@
 package py.edu.uc.lp3.avera_tplp3_2026.domain;
 
+import static py.edu.uc.lp3.avera_tplp3_2026.constants.MinecraftConstants.TIPO_NO_JUGABLE;
+
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
-@DiscriminatorValue("no_jugable")
+@DiscriminatorValue(TIPO_NO_JUGABLE)
 public abstract class PersonajeNoJugable extends EntidadViva {
 
     private boolean noControlable;
@@ -28,16 +30,16 @@ public abstract class PersonajeNoJugable extends EntidadViva {
         this.crecen = crecen;
     }
 
-    public void actualizarCrecimiento(boolean crecen) {
-        this.crecen = crecen;
-    }
-
     public boolean isNoControlable() {
         return noControlable;
     }
 
     public boolean isCrecen() {
         return crecen;
+    }
+
+    public void setCrecen(boolean crecen) {
+        this.crecen = crecen;
     }
 
     public abstract void deambular();

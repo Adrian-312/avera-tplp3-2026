@@ -39,7 +39,7 @@ java -jar target/avera-tplp3-2026-0.0.1-SNAPSHOT.jar
 
 ## 3. Comprobar que funciona
 
-Abrí en el navegador <http://localhost:8080/>. Debe mostrar `"estado": "Servicio activo"` y la lista de endpoints.
+Abrí en el navegador <http://localhost:8080/>. Debe mostrar `"estado": "Servicio activo"`. La lista de endpoints está en <http://localhost:8080/v3/api-docs> y en Swagger UI (`/swagger-ui.html`).
 
 Con la base vacía, <http://localhost:8080/minecraft/entidades> devuelve `[]`. Es correcto: todavía no hay nada guardado. Para crear entidades hacen falta pedidos `POST` (ver el punto 5).
 
@@ -64,19 +64,43 @@ La base se guarda en la carpeta `data/` (no se sube a Git). Para empezar de cero
      "base_url": "http://localhost:8080",
      "jugador_id": 1,
      "monstruo_id": 2,
-     "animal_id": 3,
-     "id_inexistente": 9999
-   }
+      "animal_id": 3,
+      "id_inexistente": 9999,
+      "a2_base_url": "http://localhost:8081",
+      "a3_base_url": "http://localhost:8082",
+      "a2_path": "/api/explosiones",
+      "a3_path": "/api/reglas/onda-expansiva"
+    }
    ```
 4. Ejecutá las carpetas **en orden**, con **Send**:
    - `00 - Estado del servicio`
    - `01 - CRUD de entidades`: los tres `POST` (201), listar, buscar, `PUT`, `PATCH`.
    - `02 - Interface Explosivo`
    - `03 - Simulación de explosión`: el Creeper queda con vida 0, el jugador pierde un escudo y queda con 15, la vaca queda con 10.
-   - `04 - Errores`: 400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA` y 400 `CUERPO_ILEGIBLE`.
-   - `05 - DELETE`: 204 y luego 404.
+    - `04 - Errores`: 400 `ENTIDAD_INVALIDA`, 404 `ENTIDAD_NO_ENCONTRADA`, 400 `CUERPO_ILEGIBLE` y 400 al re-explosionar el Creeper muerto.
+    - `05 - Entidad muerta (no revive, no actúa)`: 409 `ENTIDAD_MUERTA` al intentar revivir con `PATCH`/`PUT`; el Creeper sigue en vida 0 y desaparece de `/acciones` y `/explosivos`; 400 para `POST` con vida 0, `PUT` sin vida y `PATCH` con vida 0.
+    - `06 - DELETE`: 204 y luego 404.
 
-Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se espera.
+Cada pedido explica en su descripción (pestaña **Docs**) qué respuesta se espera. Las carpetas `07`, `08` y `09` son de POO-09: `07` verifica OpenAPI/Swagger y las dos reglas de A1; `08` y `09` requieren A2 y A3 arriba en `8081`/`8082` y ejercitan el happy path, un rechazo de cada compañero y las reglas propias de A1.
+
+## 6. Probar POO-09 (APIs cruzadas)
+
+1. Con el servicio corriendo, abrí <http://localhost:8080/v3/api-docs> y <http://localhost:8080/swagger-ui.html>. Deben aparecer `GET /` con descripción, `POST /minecraft/reglas/condicion-previa`, `POST /minecraft/reglas/absorcion-escudo`, `POST /minecraft/escenarios/explosion-validada` y `GET /minecraft/escenarios`.
+2. Con una base limpia, creá con `POST /minecraft/entidades` (o Swagger UI): jugador con 2 escudos (id 1), monstruo (id 2), jugador sin escudo (id 3) y otro monstruo para los rechazos (id 4). Después usá **Try it out** en `POST /minecraft/escenarios/explosion-validada`. No reutilices los ids de la colección de POO-08: al terminar esa carpeta el Creeper está muerto y el jugador ya no tiene escudos.
+3. Para probar sin tocar la carpeta `data/`, podés arrancar con H2 en memoria:
+
+   ```bash
+   SERVER_PORT=8080 \
+   SPRING_DATASOURCE_URL='jdbc:h2:mem:poo09demo;DB_CLOSE_DELAY=-1' \
+   SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop \
+   SPRING_JPA_SHOW_SQL=false \
+   ./mvnw spring-boot:run
+   ```
+
+4. Probá en este orden: escenario feliz (`jugadorId = 1`, `monstruoId = 2`, `potencia = 6`) → `201`; rechazo de A2 (`jugadorId = 3`, `monstruoId = 4`, `potencia = 6`) → `400 RECHAZO_A2`; crear un jugador con 1 escudo (id 5) y rechazo de A3 (`jugadorId = 5`, `monstruoId = 4`, `potencia = 10`) → `400 RECHAZO_A3`; `GET /minecraft/escenarios` → un solo elemento. El monstruo de los rechazos sigue vivo porque un rechazo no ejecuta la simulación.
+5. En la consola H2 aparece también la tabla `JUGADA` con las jugadas aceptadas.
+6. Para las reglas de A1, probá `POST /minecraft/reglas/condicion-previa` con `{"jugadorId":1,"monstruoId":2}` → `200` (tipos correctos y vivos) y con `monstruoId: 9999` → `400 REGLA_RECHAZADA`. Después probá `POST /minecraft/reglas/absorcion-escudo` con `{"potencia":12,"escudosDisponibles":3,"vidaJugador":20,"danioDeclarado":0}` → `200` con `vidaDespues: 20`; con `danioDeclarado: 3` → `400 REGLA_RECHAZADA`. Ninguna de estas reglas modifica la base.
+7. Los clientes apuntan a los compañeros reales con `A2_BASE_URL=http://localhost:8081`, `A2_VALIDATE_PATH=/api/explosiones`, `A3_BASE_URL=http://localhost:8082` y `A3_VALIDATE_PATH=/api/reglas/onda-expansiva`. El detalle está en `docs/POO09-APLICADO.md`.
 
 ## Problemas comunes
 
