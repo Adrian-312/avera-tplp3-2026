@@ -1187,68 +1187,6 @@
       "headers": []
     },
     {
-      "_id": "req_075",
-      "parentId": "fld_07_openapi",
-      "modified": 1794225600000,
-      "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/reglas/condicion-previa",
-      "name": "POST regla A1 · condición previa (200)",
-      "description": "Regla 1: el jugador y el monstruo deben existir, ser PersonajeJugable y Monstruo y estar vivos. Esperado 200 con regla='condicion-previa', tiposCorrectos=true y las vidas de ambos. No modifica la base.",
-      "method": "POST",
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": -952500,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"jugadorId\": \"{{ _.jugador_id }}\",\n  \"monstruoId\": \"{{ _.monstruo_id }}\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
-      "_id": "req_076",
-      "parentId": "fld_07_openapi",
-      "modified": 1794225600000,
-      "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/reglas/absorcion-escudo",
-      "name": "POST regla A1 · absorción de escudo (200)",
-      "description": "Regla 2: cada escudo absorbe 5 puntos. Con potencia 12, 3 escudos y vida 20: escudosConsumidos=3, danioCalculado=0 y vidaDespues=20. Esperado 200 con regla='absorcion-escudo'.",
-      "method": "POST",
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": -952000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"potencia\": 12,\n  \"escudosDisponibles\": 3,\n  \"vidaJugador\": 20,\n  \"danioDeclarado\": 0\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
       "_id": "fld_08_escenario",
       "parentId": "wrk_minecraft",
       "modified": 1794225600000,
@@ -1259,68 +1197,6 @@
       "environmentPropertyOrder": null,
       "metaSortKey": -950000,
       "_type": "request_group"
-    },
-    {
-      "_id": "req_080_setup_jugador",
-      "parentId": "fld_08_escenario",
-      "modified": 1794225600000,
-      "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/entidades",
-      "name": "POST crear jugador para escenario (con escudos)",
-      "description": "Esperado: 201. Anotar el id devuelto si difiere de jugador_id.",
-      "method": "POST",
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": -949000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"tipo\": \"jugador\",\n  \"nombre\": \"Alex\",\n  \"vida\": 20,\n  \"altura\": 1.8,\n  \"hambre\": 20,\n  \"controlable\": true,\n  \"inventario\": [\n    \"escudo\",\n    \"escudo\",\n    \"espada\"\n  ]\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
-      "_id": "req_080_setup_monstruo",
-      "parentId": "fld_08_escenario",
-      "modified": 1794225600000,
-      "created": 1794225600000,
-      "url": "{{ _.base_url }}/minecraft/entidades",
-      "name": "POST crear Creeper vivo para escenario",
-      "description": "Esperado: 201. Anotar el id devuelto si difiere de monstruo_id.",
-      "method": "POST",
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": -948500,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"tipo\": \"monstruo\",\n  \"nombre\": \"CreeperEscenario\",\n  \"vida\": 20,\n  \"altura\": 1.7,\n  \"crecen\": false,\n  \"hostil\": true,\n  \"puedeEstarArmado\": false,\n  \"potenciaExplosiva\": 10\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
     },
     {
       "_id": "req_081",

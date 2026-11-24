@@ -35,7 +35,7 @@ public class EscenarioController {
 
     @PostMapping("/explosion-validada")
     @Operation(summary = "Explosión aceptada por A2 y A3",
-            description = "Consulta primero a A2 (escudos del jugador) y después a A3 (potencia de la explosión). Si ambos aceptan, A1 aplica sus reglas locales y persiste la jugada; si alguno rechaza, la base queda igual y el código de error nombra al compañero.")
+            description = "Valida la condición previa en A1, consulta primero a A2 (explosión en coordenadas x, y, z y radio) y después a A3 (regla de onda expansiva con potencia, radio y distancia). Si ambos aceptan, A1 ejecuta la explosión y persiste la jugada; si alguno rechaza, la base queda igual y el código de error nombra al compañero (RECHAZO_A2 o RECHAZO_A3).")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Jugada persistida después de ambas aceptaciones"),
             @ApiResponse(responseCode = "400",

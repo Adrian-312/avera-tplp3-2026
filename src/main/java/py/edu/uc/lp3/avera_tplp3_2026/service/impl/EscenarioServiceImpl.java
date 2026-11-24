@@ -14,7 +14,6 @@ import py.edu.uc.lp3.avera_tplp3_2026.exception.EntidadInvalidaException;
 import py.edu.uc.lp3.avera_tplp3_2026.exception.RechazoExternoException;
 import py.edu.uc.lp3.avera_tplp3_2026.integration.Companero;
 import py.edu.uc.lp3.avera_tplp3_2026.integration.ReglaExternaClient;
-import py.edu.uc.lp3.avera_tplp3_2026.repository.EntidadVivaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.repository.JugadaRepository;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioRequest;
 import py.edu.uc.lp3.avera_tplp3_2026.rest.dto.EscenarioResponse;
@@ -76,14 +75,16 @@ public class EscenarioServiceImpl implements EscenarioService {
 
         ValidacionExternaResponse decisionA2 = reglaExternaClient.validar(Companero.A2, payload);
         if (!decisionA2.aceptada()) {
+            String motivoA2 = limpiarPrefijo(decisionA2.motivo(), "Rechazo de A2:");
             throw new RechazoExternoException("A2", 400,
-                    decisionA2.codigo() != null ? decisionA2.codigo() : "REGLA_A2", decisionA2.motivo());
+                    decisionA2.codigo() != null ? decisionA2.codigo() : "REGLA_A2", motivoA2);
         }
 
         ValidacionExternaResponse decisionA3 = reglaExternaClient.validar(Companero.A3, payload);
         if (!decisionA3.aceptada()) {
+            String motivoA3 = limpiarPrefijo(decisionA3.motivo(), "Rechazo de A3:");
             throw new RechazoExternoException("A3", 400,
-                    decisionA3.codigo() != null ? decisionA3.codigo() : "REGLA_A3", decisionA3.motivo());
+                    decisionA3.codigo() != null ? decisionA3.codigo() : "REGLA_A3", motivoA3);
         }
 
         SimulacionResponse simulacion = simulacionService.simularExplosion(monstruo.getId(), request.potencia());
@@ -109,5 +110,16 @@ public class EscenarioServiceImpl implements EscenarioService {
     @Transactional(readOnly = true)
     public List<Jugada> listar() {
         return jugadaRepository.findAll();
+    }
+
+    private String limpiarPrefijo(String texto, String prefijo) {
+        if (texto == null || texto.isBlank()) {
+            return "Regla rechazada por el servicio externo";
+        }
+        String limpio = texto.trim();
+        if (limpio.startsWith(prefijo)) {
+            return limpio.substring(prefijo.length()).trim();
+        }
+        return limpio;
     }
 }
