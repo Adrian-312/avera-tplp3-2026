@@ -1192,7 +1192,7 @@
       "modified": 1794225600000,
       "created": 1794225600000,
       "name": "08 - Escenario cruzado A1 + A2 + A3 (POO-09)",
-      "description": "POO-09 con A2 (Yamil, 8081) y A3 (Javier, 8082). Ejecutar con jugador y monstruo vivos creados; las respuestas de ejemplo están en insomnia/respuestas-ejemplo.md.",
+      "description": "POO-09 con A2 (Yamil, 8081) y A3 (Javier, 8082). Ejecutar con jugador y monstruo vivos creados; las respuestas de ejemplo están en el README principal (sección «Respuestas de ejemplo exportadas») y en insomnia/README.md.",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": -950000,

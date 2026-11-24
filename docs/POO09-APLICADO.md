@@ -2,7 +2,7 @@
 
 - **Fecha:** 22/11/2026
 - **Estudiante:** Adrián Vera (`Adrian-312`)
-- **Commit de entrega:** `https://github.com/Adrian-312/avera-tplp3-2026/commit/<HASH_DEL_COMMIT>` (se completa después de hacer commit; no se hizo commit en esta sesión)
+- **Commit de entrega:** `https://github.com/Adrian-312/avera-tplp3-2026/commit/<HASH_DEL_COMMIT>
 - **Documento base:** [Enunciado POO-09](https://raw.githubusercontent.com/alefq/afq-taller-git-2024/main/docs/ejercicio-poo-09-apis-cruzadas-2026-11-16.md)
 - **Grupos:** [Reparto A2/A3](https://raw.githubusercontent.com/alefq/afq-taller-git-2024/main/docs/ejercicio-poo-09-grupos-2026-11-16.md)
 - **Ejemplo de referencia:** [Ejemplo uno](https://raw.githubusercontent.com/alefq/afq-taller-git-2024/main/docs/ejercicio-poo-09-ejemplo-uno-2026-11-16.md)
@@ -210,7 +210,3 @@ A3_BASE_URL='http://localhost:8082' \
 A3_VALIDATE_PATH='/api/reglas/onda-expansiva' \
 ./mvnw spring-boot:run
 ```
-
-## 9. Pendientes que no dependen de A1
-
-1. Pegar el hash del commit en el enlace del encabezado.
